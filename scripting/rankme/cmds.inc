@@ -135,7 +135,6 @@ ShowTOP(client,at){
 	else
 		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC LIMIT %i, 10",g_minimal_kills,at-1);
 	
-	
 	SQL_TQuery(stats_db,SQL_TopCallback,query,Datapack);
 
 }
@@ -348,9 +347,10 @@ public Action:CMD_Rank(client,args){
 	}
 	new String:query[500];
 	if(g_rankbots)
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score",g_minimal_kills);
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC",g_minimal_kills);
 	else
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score",g_minimal_kills);
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC",g_minimal_kills);
+	
 	SQL_TQuery(stats_db,SQL_RankCallback,query,client);
 	return Plugin_Handled;
 }
@@ -587,9 +587,9 @@ public Action:CMD_StatsMe(client,args){
 		return Plugin_Handled;
 	new String:query[500];
 	if(g_rankbots)
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score",g_minimal_kills);
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC",g_minimal_kills);
 	else
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score",g_minimal_kills);
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC",g_minimal_kills);
 	SQL_TQuery(stats_db,SQL_StatsMeCallback,query,client);
 	return Plugin_Handled;
 	
@@ -708,9 +708,9 @@ public Action:CMD_Next(client,args){
 		return Plugin_Handled;
 	new String:query[500];
 	if(g_rankbots)
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score",g_minimal_kills);
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC",g_minimal_kills);
 	else
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score",g_minimal_kills);
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC",g_minimal_kills);
 	SQL_TQuery(stats_db,SQL_NextCallback,query,client);
 	return Plugin_Handled;
 }

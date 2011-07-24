@@ -196,9 +196,12 @@
 = V.2.0.4 (07/24/11):
 	 => Fix:
 		   = Fixed showing BOT on stats even if rankme_rankbots is 0.
+= V.2.0.5 (07/24/11):
+	 => Fix:
+		   = Fixed stats being queried without DESC caused by the last version.
 */
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.0.4"
+#define PLUGIN_VERSION "2.0.5"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -1535,5 +1538,11 @@ public OnConVarChanged(Handle:convar, const String:oldValue[], const String:newV
 	g_points_vip_killed_team = GetConVarInt(cvar_points_vip_killed_team);
 	g_points_vip_killed_player = GetConVarInt(cvar_points_vip_killed_player);
 	g_vip_enabled = GetConVarBool(cvar_vip_enabled);
+	new String:query[500];
+	if(g_rankbots)
+		Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d'",g_minimal_kills);
+	else
+		Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d' AND steam <> 'BOT'",g_minimal_kills);
+	SQL_TQuery(stats_db,SQL_GetPlayersCallback,query);
 }
 
