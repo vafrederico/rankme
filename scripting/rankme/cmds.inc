@@ -104,11 +104,7 @@ public Action:CMD_Top(client,args){
 		return Plugin_Continue;
 	if(client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
-	if(total_players == 0){
-		new String:query[500];
-		Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d'",g_minimal_kills);
-		SQL_TQuery(stats_db,SQL_GetPlayersCallback,query);
-	}
+	
 	new String:arg1[5];
 	GetCmdArg(1,arg1,sizeof(arg1));
 	if(!StrEqual(arg1,"") && StringToInt(arg1) != 0){
@@ -134,7 +130,11 @@ ShowTOP(client,at){
 		
 	}
 	new String:query[200];
-	Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC LIMIT %i, 10",g_minimal_kills,at-1);
+	if(g_rankbots)
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC LIMIT %i, 10",g_minimal_kills,at-1);
+	else
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC LIMIT %i, 10",g_minimal_kills,at-1);
+	
 	
 	SQL_TQuery(stats_db,SQL_TopCallback,query,Datapack);
 
@@ -224,12 +224,7 @@ public Action:CMD_TopKnife(client,args){
 		return Plugin_Continue;
 	if(client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
-	
-	if(total_players == 0){
-		new String:query[500];
-		Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d'",g_minimal_kills);
-		SQL_TQuery(stats_db,SQL_GetPlayersCallback,query);
-	}
+
 	new String:arg1[5];
 	GetCmdArg(1,arg1,sizeof(arg1));
 	if(!StrEqual(arg1,"") && StringToInt(arg1) != 0){
@@ -255,8 +250,11 @@ ShowTOPKnife(client,at){
 		
 	}
 	new String:query[200];
-	Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY knife DESC LIMIT %i, 10",g_minimal_kills,at-1);
-	
+	if(g_rankbots)
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY knife DESC LIMIT %i, 10",g_minimal_kills,at-1);
+	else
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY knife DESC LIMIT %i, 10",g_minimal_kills,at-1);
+		
 	SQL_TQuery(stats_db,SQL_TopKnifeCallback,query,Datapack);
 
 }
@@ -349,7 +347,10 @@ public Action:CMD_Rank(client,args){
 		return Plugin_Handled;
 	}
 	new String:query[500];
-	Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d' ORDER BY score DESC",g_minimal_kills);
+	if(g_rankbots)
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score",g_minimal_kills);
+	else
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score",g_minimal_kills);
 	SQL_TQuery(stats_db,SQL_RankCallback,query,client);
 	return Plugin_Handled;
 }
@@ -585,7 +586,10 @@ public Action:CMD_StatsMe(client,args){
 	if(client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 	new String:query[500];
-	Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d' ORDER BY score DESC",g_minimal_kills);
+	if(g_rankbots)
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score",g_minimal_kills);
+	else
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score",g_minimal_kills);
 	SQL_TQuery(stats_db,SQL_StatsMeCallback,query,client);
 	return Plugin_Handled;
 	
@@ -703,7 +707,10 @@ public Action:CMD_Next(client,args){
 	if(client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 	new String:query[500];
-	Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d' ORDER BY score DESC",g_minimal_kills);
+	if(g_rankbots)
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score",g_minimal_kills);
+	else
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score",g_minimal_kills);
 	SQL_TQuery(stats_db,SQL_NextCallback,query,client);
 	return Plugin_Handled;
 }

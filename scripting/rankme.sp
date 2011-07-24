@@ -193,9 +193,12 @@
 	 => Fix:
 		   = Fixed TK and Suicide points not obeying rankme_changes_chat.
 		   = Fixed Knife Kills messing up the score. (thanks GrO)
+= V.2.0.4 (07/24/11):
+	 => Fix:
+		   = Fixed showing BOT on stats even if rankme_rankbots is 0.
 */
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.0.3"
+#define PLUGIN_VERSION "2.0.4"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -422,9 +425,6 @@ public OnPluginStart(){
 	
 	
 	LoadTranslations("rankme.phrases");
-	new String:query[500];
-	Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d'",g_minimal_kills);
-	SQL_TQuery(stats_db,SQL_GetPlayersCallback,query);
 	
 	HookEvent("player_death",	EventPlayerDeath);
 	HookEvent("player_spawn",	EventPlayerSpawn);
@@ -741,6 +741,12 @@ public OnConfigsExecuted(){
 	g_vip_enabled = GetConVarBool(cvar_vip_enabled);
 	g_points_lose_tk = GetConVarInt(cvar_points_lose_tk);
 	g_points_lose_suicide = GetConVarInt(cvar_points_lose_suicide);
+	new String:query[500];
+	if(g_rankbots)
+		Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d'",g_minimal_kills);
+	else
+		Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d' AND steam <> 'BOT'",g_minimal_kills);
+	SQL_TQuery(stats_db,SQL_GetPlayersCallback,query);
 }
 
 public DumpDB(){
