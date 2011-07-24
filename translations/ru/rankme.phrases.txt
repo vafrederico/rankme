@@ -1,0 +1,252 @@
+﻿"Phrases"
+{
+	"Kills"
+	{
+		"ru"		"Убийств"
+	}
+	
+	"IsRankedAt" // unused feature?
+	{
+		"ru"		"Игрок {1} с рангом {2}/{3} имеет очков - {4}, убийств - {5}, смертей - {6}, У/С - {7}"
+	}
+
+	"Killing"
+	{
+		"ru"		"{lightgreen}{1}{default} ({2}) получает {3} очк. за убийство {lightgreen}{4} {default}({5})."
+	}
+	
+	"KillingKillerNotRanked"
+	{
+		"ru"		"{lightgreen}{1}{default} ({2})[{6}/{7}] получает {3} очк. за убийство {lightgreen}{4} {default}({5})."
+	}
+	
+	"KillingVictimNotRanked"
+	{
+		"ru"		"{lightgreen}{1}{default} ({2}) получает {3} очк. за убийство {lightgreen}{4} {default}({5})[{6}/{7}]."
+	}
+	
+	"KillingBothNotRanked"
+	{
+		"ru"		"{lightgreen}{1}{default} ({2})[{6}/{7}] получает {3} очк. за убийство {lightgreen}{4} {default}({5})[{8}/{9}]."
+	}
+	
+	"Headshot"
+	{
+		"ru"		"{lightgreen}{1}{default} ({2}) получает {3} очк. за убийство в голову."
+	}
+	
+	"TR_Planting"
+	{
+		"ru"		"{lightgreen}Террористы{default} получают {1} очк. за установку бомбы."
+	}
+	
+	"Planting"
+	{
+		"ru"		"{lightgreen}{1}{default} ({2}) получает {3} очк. за установку бомбы."
+	}
+	
+	"TR_Exploding"
+	{
+		"ru"		"{lightgreen}Террористы{default} получают {1} очк. за успешный взрыв бомбы."
+	}
+	
+	"Exploding"
+	{
+		"ru"		"{lightgreen}{1}{default} ({2}) получает {3} очк. за успешный взрыв бомбы."
+	}
+	
+	"CT_Defusing"
+	{
+		"ru"		"{lightgreen}Спецназ{default} получает {1} очк. за разминирование бомбы."
+	}
+	
+	"Defusing"
+	{
+		"ru"		"{lightgreen}{1}{default} ({2}) получает {3} очк. за разминирование бомбы."
+	}
+	
+	"CT_Hostage"
+	{
+		"ru"		"{lightgreen}Спецназ{default} получает {1} очк. за спасение заложника."
+	}
+	
+	"Hostage"
+	{
+		"ru"		"{lightgreen}{1}{default} ({2}) получает {3} очк. за спасение заложника."
+	}
+	
+	"CT_Round"
+	{
+		"ru"		"{default}Победив в раунде, {lightgreen}Спецназ{default} получает {1} очк."
+	}
+	
+	"TR_Round"
+	{
+		"ru"		"{default}Победив в раунде, {lightgreen}Террористы{default} получают {1} очк."
+	}
+	
+	"Showing" // unused feature?
+	{
+		"ru"		"Показаны с {1} по {2} из {3}\n"
+	}
+	
+	"Next"
+	{
+		"ru"		"След."
+	}
+	
+	"Back"
+	{
+		"ru"		"Пред."
+	}
+	
+	"KnifeKills"
+	{
+		"ru"		"Убийства ножом"
+	}
+	
+	"NotRanked"
+	{
+		"ru"		"У Вас еще нет ранга. Вы должны убить {2} чел., чтобы попасть в рейтинг. Сейчас - {1}."
+	}
+	
+	"Position"
+	{
+		"ru"		"Позиция"
+	}
+	
+	"Points"
+	{
+		"ru"		"Очков"
+	}
+	
+	"BasicStats"
+	{
+		"ru"		"Основная статистика"
+	}
+	
+	"KillsDeaths"
+	{
+		"ru"		"Убийств: {1}, Смертей: {2}"
+	}
+	
+	"Suicides"
+	{
+		"ru"		"Суициды"
+	}
+	
+	"RoundStats"
+	{
+		"ru"		"Статистика раунда"
+	}
+	
+	"TRWins"
+	{
+		"ru"		"Победы T" // everyone can understand that T - terrorists, CT - counter-terrorists
+	}
+	
+	"CTWins"
+	{
+		"ru"		"Победы CT"
+	}
+	
+	"HitStats"
+	{
+		"ru"		"Статисткиа попаданий"
+	}
+	
+	"Shots"
+	{
+		"ru"		"Выстрелов"
+	}
+	
+	"Hits"
+	{
+		"ru"		"Попаданий"
+	}
+	
+	"Accuracy"
+	{
+		"ru"		"Точность"
+	}
+	
+	"BombHostagesStats"
+	{
+		"ru"		"Стаитика целей" // objectives stats
+	}
+	
+	"PlantedBombs"
+	{
+		"ru"		"Установлено бомб"
+	}
+	
+	"DefusedBombs"
+	{
+		"ru"		"Разминировано бомб"
+	}
+	
+	"ExplodedBombs"
+	{
+		"ru"		"Взорвано бомб"
+	}
+	
+	"RescuedHostages"
+	{
+		"ru"		"Спасено заложников"
+	}
+	
+	"OtherStats"
+	{
+		"ru"		"Прочая статистика"
+	}
+	
+	"TimeConnected"
+	{
+		"ru"		"Время в игре: {1}ч, {2} м, {3}с."
+	}
+	
+	"Head"
+	{
+		"ru"		"Голова"
+	}
+	
+	"Chest"
+	{
+		"ru"		"Грудь" // Сундук! :O
+	}
+	
+	"Stomach"
+	{
+		"ru"		"Живот"
+	}
+	
+	"LeftArm"
+	{
+		"ru"		"Левая рука"
+	}
+	
+	"LeftLeg"
+	{
+		"ru"		"Левая нога"
+	}
+	
+	"RightArm"
+	{
+		"ru"		"Правая рука"
+	}
+	
+	"RightLeg"
+	{
+		"ru"		"Правая нога"
+	}
+	
+	"Next9Players"
+	{
+		"ru"		"След. 9 игроков"
+	}
+	
+	"WeaponsStats"
+	{
+		"ru"		"Статистика оружий"
+	}
+}

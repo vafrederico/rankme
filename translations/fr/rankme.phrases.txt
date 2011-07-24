@@ -1,0 +1,208 @@
+﻿"Phrases"
+{
+	"Kills"
+	{
+		"fr"		"Meurtres"
+	}
+	"GotPointsBy"
+	{
+		"fr"		"{lightgreen}{1}{default} ({2}) gagne {3} point(s) pour {4}."
+	}
+	"IsRankedAt"
+	{
+		"fr"		"Le joueur {1} est classé {2}/{3} avec {4} points, {5} meurtres, {6} morts et un ratio de {7}"
+	}
+	"Killing"
+	{
+		"fr"		"{lightgreen}{1}{default} ({2}) gagne {3} points pour avoir tué {lightgreen}{4} {default}({5})."
+	}
+	"KillingKillerNotRanked"
+	{
+		"fr"		"{lightgreen}{1}{default} ({2})[{6}/{7}] gagne {3} points pour avoir tué {lightgreen}{4} {default}({5})."
+	}
+	"KillingVictimNotRanked"
+	{
+		"fr"		"{lightgreen}{1}{default} ({2}) gagne {3} points pour avoir tué {lightgreen}{4} {default}({5})[{6}/{7}]."
+	}
+	"KillingBothNotRanked"
+	{
+		"fr"		"{lightgreen}{1}{default} ({2})[{6}/{7}] gagne {3} points pour avoir tué {lightgreen}{4} {default}({5})[{8}/{9}]."
+	}
+	"Headshot"
+	{
+		"fr"		"{lightgreen}{1}{default} ({2}) gagne {3} points pour avoir fait un headshot."
+	}
+	"TR_Planting"
+	{
+		"fr"		"{lightgreen}Les terroristes{default} gagnent {1} points pour avoir planté la bombe."
+	}
+	"Planting"
+	{
+		"fr"		"{lightgreen}{1}{default} ({2}) gagne {3} points pour avoir planté la bombe."
+	}
+	"TR_Exploding"
+	{
+		"fr"		"{lightgreen}Les terroristes{default} gagnent {1} points pour avoir fait exploser la bombe."
+	}
+	"Exploding"
+	{
+		"fr"		"{lightgreen}{1}{default} ({2}) gagne {3} points pour avoir fait exploser la bombe."
+	}
+	"CT_Defusing"
+	{
+		"fr"		"{lightgreen}Les anti-terroristes{default} gagnent {1} points pour avoir désamorcé la bombe."
+	}
+	"Defusing"
+	{
+		"fr"		"{lightgreen}{1}{default} ({2}) gagne {3} points pour avoir désamorcé la bombe."
+	}
+	"CT_Hostage"
+	{
+		"fr"		"{lightgreen}Les anti-terroristes{default} gagnent {1} points pour avoir secouru les hotages."
+	}
+	"Hostage"
+	{
+		"fr"		"{lightgreen}{1}{default} ({2}) gagne {3} points pour avoir secouru les hotages."
+	}
+	"CT_Round"
+	{
+		"fr"		"{lightgreen}Les anti-terroristes{default} gagnent {1} points pour avoir remporté le round."
+	}
+	"TR_Round"
+	{
+		"fr"		"{lightgreen}Les terrorists{default} gagnent {1} points pour avoir remporté le round."
+	}
+	"Showing"
+	{
+		"fr"		"Montré par {1} à {2} de {3}\n"
+	}
+	"Next"
+	{
+		"fr"		"Suivant"
+	}
+	"Back"
+	{
+		"fr"		"Retour"
+	}
+	"KnifeKills"
+	{
+		"fr"		"Tués au couteau"
+	}
+	"NotRanked"
+	{
+		"fr"		"Pas encore classé. Vous avez besoin de {2} meurtres pour rentrer dans les rangs. Actuellement: {1}."
+	}
+	"Position"
+	{
+		"fr"		"Position"
+	}
+	"Points"
+	{
+		"fr"		"Points"
+	}
+	"BasicStats"
+	{
+		"fr"		"Statistiques basiques"
+	}
+	"KillsDeaths"
+	{
+		"fr"		"Meurtres: {1}   Morts: {2}"
+	}
+	"Suicides"
+	{
+		"fr"		"Suicides"
+	}
+	"RoundStats"
+	{
+		"fr"		"Statistiques de round"
+	}
+	"TRWins"
+	{
+		"fr"		"Terroristes gagnent"
+	}
+	"CTWins"
+	{
+		"fr"		"Anti-terroristes gagnent"
+	}
+	"HitStats"
+	{
+		"fr"		"Statistiques des hits"
+	}
+	"Shots"
+	{
+		"fr"		"Coups"
+	}
+	"Hits"
+	{
+		"fr"		"Hits"
+	}
+	"Accuracy"
+	{
+		"fr"		"Précision"
+	}
+	"BombHostagesStats"
+	{
+		"fr"		"Statistiques Hotages/Bombes"
+	}
+	"PlantedBombs"
+	{
+		"fr"		"Bombes plantées"
+	}
+	"DefusedBombs"
+	{
+		"fr"		"Bombes désamorcées"
+	}
+	"ExplodedBombs"
+	{
+		"fr"		"Bombes explosées"
+	}
+	"RescuedHostages"
+	{
+		"fr"		"Hotages secourus"
+	}
+	"OtherStats"
+	{
+		"fr"		"Autres statistiques"
+	}
+	"TimeConnected"
+	{
+		"fr"		"Temps de connexion: {1} heures, {2} minutes, {3} secondes"
+	}
+	"Head"
+	{
+		"fr"		"Tête"
+	}
+	"Chest"
+	{
+		"fr"		"Coffre"
+	}
+	"Stomach"
+	{
+		"fr"		"Estomac"
+	}
+	"LeftArm"
+	{
+		"fr"		"Bras gauche"
+	}
+	"LeftLeg"
+	{
+		"fr"		"Jambe gauche"
+	}
+	"RightArm"
+	{
+		"fr"		"Bras droit"
+	}
+	"RightLeg"
+	{
+		"fr"		"Jambe droite"
+	}
+	"Next9Players"
+	{
+		"fr"		"9 prochains joueurs"
+	}
+	"WeaponsStats"
+	{
+		"fr"		"Statistiques des armes"
+	}
+}
+ 

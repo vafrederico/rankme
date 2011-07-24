@@ -1,0 +1,813 @@
+// FROM SMLIB
+stock Array_FindHighestValue(any:array[], size, start=0)
+{
+	if (start < 0) {
+		start = 0;
+	}
+
+	new any:value = array[start];
+	new any:tempValue;
+	new x = start;
+	
+	for (new i=start; i < size; i++) {
+		
+		tempValue = array[i];
+		
+		if (tempValue > value) {
+			value = tempValue;
+			x = i;
+		}
+		
+	}
+	
+	return x;
+}
+
+public Action:CMD_ResetRank(client,args){
+	if(!g_enabled) 
+		return Plugin_Continue;
+	new String:arg1[64];
+	
+	GetCmdArg(1,arg1,sizeof(arg1));
+	
+	ReplaceString(arg1,sizeof(arg1)," ","");
+	ReplaceString(arg1,sizeof(arg1),"\"","");
+	new String:query[100];
+	Format(query,sizeof(query),"DELETE FROM rankme WHERE steam='%s'",arg1);
+	SQL_TQuery(stats_db,SQL_NothingCallback,query);
+	LogAction(client,-1,"[RankMe]: Reseted rank (%s)",arg1);
+	new String:auth[64];
+	for(new i=1;i<=MaxClients;i++){
+		if(IsClientInGame(i)){
+		
+			GetClientAuthString(i,auth,sizeof(auth));
+			
+			if(StrEqual(auth,arg1,false))
+				OnClientPutInServer(i);
+		
+		}
+	}
+	ReplyToCommand(client,"[RankMe]: Reseted");
+	return Plugin_Handled;
+}
+
+public Action:CMD_ResetRankAll(client,args){
+	if(!g_enabled) 
+		return Plugin_Continue;
+	
+	SQL_TQuery(stats_db,SQL_NothingCallback,"DELETE FROM rankme WHERE 1=1");
+	
+	LogAction(client,-1,"[RankMe]: All rank data has been reseted");
+	
+	for(new i=1;i<=MaxClients;i++){
+		if(IsClientInGame(i))
+			OnClientPutInServer(i);
+	}
+	ReplyToCommand(client,"[RankMe]: All rank data has been reseted");
+	return Plugin_Handled;
+}
+
+public Action:CMD_Purge(client,args){
+	if(!g_enabled) 
+		return Plugin_Continue;
+	new String:arg1[64];
+	
+	GetCmdArg(1,arg1,sizeof(arg1));
+	
+	ReplaceString(arg1,sizeof(arg1)," ","");
+	ReplaceString(arg1,sizeof(arg1),"\"","");
+	
+	new deletebefore;
+	if(StringToInt(arg1) == 0){
+		ReplyToCommand(client,"[RankMe]: Usage: rankpurge X (where X equals number of days of inactivity");
+		return Plugin_Handled;
+	}
+	deletebefore = GetTime() - (StringToInt(arg1)*86400);
+	new String:query[100];
+	Format(query,sizeof(query),"DELETE FROM rankme WHERE lastconnect < '%d'",deletebefore);
+	SQL_TQuery(stats_db,SQL_PurgeCallback,query);
+	LogAction(client,-1,"[RankMe]: Purged rank (%s days inactivity)",arg1);
+	ReplyToCommand(client,"[RankMe]: Purged");
+	return Plugin_Handled;
+}
+public SQL_GetPlayersCallback(Handle:owner, Handle:hndl, const String:error[], any:Datapack){
+	if(hndl == INVALID_HANDLE)
+	{
+		LogError("[RankMe] Query Fail: %s", error);
+		PrintToServer(error);
+		return;
+	}
+	total_players =SQL_GetRowCount(hndl);
+}
+public Action:CMD_Top(client,args){
+	if(!g_enabled) 
+		return Plugin_Continue;
+	if(client == 0 || !IsClientInGame(client))
+		return Plugin_Handled;
+	if(total_players == 0){
+		new String:query[500];
+		Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d'",g_minimal_kills);
+		SQL_TQuery(stats_db,SQL_GetPlayersCallback,query);
+	}
+	new String:arg1[5];
+	GetCmdArg(1,arg1,sizeof(arg1));
+	if(!StrEqual(arg1,"") && StringToInt(arg1) != 0){
+		ShowTOP(client,StringToInt(arg1));
+	}	else {
+		ShowTOP(client,0);
+	}
+	return Plugin_Handled;
+}
+
+ShowTOP(client,at){
+	if(client == 0 || !IsClientInGame(client))
+		return;
+	new Handle:Datapack= CreateDataPack();
+	
+	WritePackCell(Datapack,client);
+	
+	if(at>0){
+		WritePackCell(Datapack,at-1);
+		
+	}	else {
+		WritePackCell(Datapack,0);
+		
+	}
+	new String:query[200];
+	Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC LIMIT %i, 10",g_minimal_kills,at-1);
+	
+	SQL_TQuery(stats_db,SQL_TopCallback,query,Datapack);
+
+}
+public SQL_TopCallback(Handle:owner, Handle:hndl, const String:error[], any:Datapack)
+
+{
+	if(hndl == INVALID_HANDLE)
+	{
+		LogError("[RankMe] Query Fail: %s", error);
+		PrintToServer(error);
+		return;
+	}
+	
+	ResetPack(Datapack);
+	new i;
+	new client = ReadPackCell(Datapack);
+	if(client == 0 || !IsClientInGame(client))
+		return;
+	new at = ReadPackCell(Datapack);
+	if(!SQL_HasResultSet(hndl)){
+		ShowTOP(client,at-10);
+	}
+	new String:name[256];
+	new String:temp[500];
+	
+	new Handle:menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle:MenuStyle_Radio),MenuHandler_Top);
+	
+	new Float:kdr;
+	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,total_players);
+	SetMenuTitle(menu,"");
+	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
+	{
+		
+		i++;
+		
+		SQL_FetchString(hndl,2,name,sizeof(name));
+			
+		
+		new deaths;
+		if(SQL_FetchInt(hndl,6) == 0)
+			deaths = 1;
+		else 
+			deaths=SQL_FetchInt(hndl,6);
+		
+		kdr = SQL_FetchFloat(hndl,5)/deaths;
+		Format(temp,sizeof(temp),"%s%d - %s (%d) - KDR: %.2f\n",temp,i+at,name,SQL_FetchInt(hndl,4),kdr);
+		
+		
+	} 
+	Format(temp,sizeof(temp),"%s\n ",temp);
+	AddMenuItem(menu,temp,temp);
+	
+	
+	IntToString(at+10,temp,sizeof(temp));
+	new String:temp1[20];
+	Format(temp1,sizeof(temp1),"%T","Next",client);
+	if(i>9)
+		AddMenuItem(menu,temp,temp1);
+	IntToString(at-10,temp,sizeof(temp));
+	Format(temp1,sizeof(temp1),"%T","Back",client);
+	if(at+i-1 >9)
+		AddMenuItem(menu,temp,temp1);
+	
+	DisplayMenuAtItem(menu,client,at,MENU_TIME_FOREVER);
+}
+
+public MenuHandler_Top(Handle:menu, MenuAction:action, param1, param2){
+	
+	if (action == MenuAction_Select)
+	{
+		new String:temp[250];
+	
+		GetMenuItem(menu, param2, temp, sizeof(temp));
+		if(StringToInt(temp) >= 0){
+			ShowTOP(param1,StringToInt(temp)+1);
+		}
+	}
+	if (action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+}
+
+public Action:CMD_TopKnife(client,args){
+	if(!g_enabled) 
+		return Plugin_Continue;
+	if(client == 0 || !IsClientInGame(client))
+		return Plugin_Handled;
+	
+	if(total_players == 0){
+		new String:query[500];
+		Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d'",g_minimal_kills);
+		SQL_TQuery(stats_db,SQL_GetPlayersCallback,query);
+	}
+	new String:arg1[5];
+	GetCmdArg(1,arg1,sizeof(arg1));
+	if(!StrEqual(arg1,"") && StringToInt(arg1) != 0){
+		ShowTOPKnife(client,StringToInt(arg1));
+	}	else {
+		ShowTOPKnife(client,0);
+	}
+	return Plugin_Handled;
+}
+
+ShowTOPKnife(client,at){
+	if(client == 0 || !IsClientInGame(client))
+		return;
+	new Handle:Datapack= CreateDataPack();
+	
+	WritePackCell(Datapack,client);
+	
+	if(at>0){
+		WritePackCell(Datapack,at-1);
+		
+	}	else {
+		WritePackCell(Datapack,0);
+		
+	}
+	new String:query[200];
+	Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY knife DESC LIMIT %i, 10",g_minimal_kills,at-1);
+	
+	SQL_TQuery(stats_db,SQL_TopKnifeCallback,query,Datapack);
+
+}
+public SQL_TopKnifeCallback(Handle:owner, Handle:hndl, const String:error[], any:Datapack)
+
+{
+	if(hndl == INVALID_HANDLE)
+	{
+		LogError("[RankMe] Query Fail: %s", error);
+		PrintToServer(error);
+		return;
+	}
+	ResetPack(Datapack);
+	new i;
+	new client = ReadPackCell(Datapack);
+	if(client == 0 || !IsClientInGame(client))
+		return;
+	new at = ReadPackCell(Datapack);
+	if(!SQL_HasResultSet(hndl)){
+		ShowTOP(client,at-10);
+	}
+	new String:name[256];
+	new String:temp[500];
+	
+	new Handle:menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle:MenuStyle_Radio),MenuHandler_TopKnife);
+	
+	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,total_players);
+	SetMenuTitle(menu,"");
+	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
+	{
+		
+		i++;
+		
+		SQL_FetchString(hndl,2,name,sizeof(name));
+			
+		
+	
+		Format(temp,sizeof(temp),"%s%d - %s (%d) - %T: %d\n",temp,i+at,name,SQL_FetchInt(hndl,4),"KnifeKills",client,SQL_FetchInt(hndl,16));
+		
+		
+	} 
+	Format(temp,sizeof(temp),"%s\n ",temp);
+	AddMenuItem(menu,temp,temp);
+	
+	
+	IntToString(at+10,temp,sizeof(temp));
+	new String:temp1[20];
+	Format(temp1,sizeof(temp1),"%T","Next",client);
+	if(i>9)
+		AddMenuItem(menu,temp,temp1);
+	IntToString(at-10,temp,sizeof(temp));
+	Format(temp1,sizeof(temp1),"%T","Back",client);
+	if(at+i-1 >9)
+		AddMenuItem(menu,temp,temp1);
+
+	DisplayMenuAtItem(menu,client,at,MENU_TIME_FOREVER);
+}
+
+public MenuHandler_TopKnife(Handle:menu, MenuAction:action, param1, param2){
+	
+	if (action == MenuAction_Select)
+	{
+		new String:temp[250];
+	
+		GetMenuItem(menu, param2, temp, sizeof(temp));
+		if(StringToInt(temp) >= 0){
+			ShowTOPKnife(param1,StringToInt(temp)+1);
+		}
+	}
+	if (action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+}
+public MenuHandler_DoNothing(Handle:menu, MenuAction:action, param1, param2){
+	if (action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+}
+
+public Action:CMD_Rank(client,args){
+	if(!g_enabled) 
+		return Plugin_Continue;
+	if(client == 0 || !IsClientInGame(client))
+		return Plugin_Handled;
+	
+	if(stats[client][KILLS] < g_minimal_kills){
+		PrintToChat(client,"%s %t",MSG,"NotRanked",stats[client][KILLS],g_minimal_kills);
+		return Plugin_Handled;
+	}
+	new String:query[500];
+	Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d' ORDER BY score DESC",g_minimal_kills);
+	SQL_TQuery(stats_db,SQL_RankCallback,query,client);
+	return Plugin_Handled;
+}
+
+
+public SQL_RankCallback(Handle:owner, Handle:hndl, const String:error[], any:client)
+
+{
+	if(hndl == INVALID_HANDLE)
+	{
+		LogError("[RankMe] Query Fail: %s", error);
+		return;
+	}
+	if(client == 0 || !IsClientInGame(client))
+		return;
+	new i;
+	total_players =SQL_GetRowCount(hndl);
+	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
+	{
+		i++;
+		new String:Auth_receive[32];
+		SQL_FetchString(hndl,1,Auth_receive,32);
+		
+		new String:auth[32];
+		GetClientAuthString(client,auth,sizeof(auth));
+		new Float:kdr;
+		new deaths;
+		if(SQL_FetchInt(hndl,6) == 0)
+			deaths = 1;
+		else 
+			deaths=SQL_FetchInt(hndl,6);
+		
+		kdr = SQL_FetchFloat(hndl,5)/deaths;
+		if(StrEqual(Auth_receive,auth,false)){
+		
+			new String:name[256];
+			GetClientName(client, name, sizeof(name));
+			if(g_show_rank_all){
+				CPrintToChatAll("%s %t",MSG,"IsRankedAt", name,i,SQL_GetRowCount(hndl),stats[client][SCORE],stats[client][KILLS],stats[client][DEATHS],kdr);
+			} else {
+				CPrintToChat(client,"%s %t",MSG,"IsRankedAt", name,i,SQL_GetRowCount(hndl),stats[client][SCORE],stats[client][KILLS],stats[client][DEATHS],kdr);
+			}
+			break;
+		}
+	
+	} 
+}
+public Action:CMD_Session(client,args){
+	if(!g_enabled) 
+		return Plugin_Continue;
+	if(client == 0 || !IsClientInGame(client))
+		return Plugin_Handled;
+	new Handle:panel = CreateMenuEx(_,MenuHandler_DoNothing,MENU_ACTIONS_ALL);
+	new String:text[255];
+	new String:temp[255];
+	SetMenuPagination(panel,4);
+	Format(temp,sizeof(temp),"- %T\n","BasicStats",client);
+	StrCat(text,255,temp);
+	Format(temp,sizeof(temp),"%T: %i\n","Points",client,session[client][SCORE]);
+	StrCat(text,255,temp);
+	new ikills = session[client][KILLS];
+	new ideaths=session[client][DEATHS];
+	new deaths;
+	if(ideaths == 0)
+		deaths = 1;
+	else 
+		deaths=ideaths;
+	new Float:kills = IntToFloat(ikills);
+
+	new shots;
+	if(session[client][SHOTS] == 0)
+		shots = 1;
+	else
+		shots = session[client][SHOTS];
+	
+	Format(temp,255,"%T   KDR: %.2f\n","KillsDeaths",client,ikills,ideaths,kills/deaths);
+	StrCat(text,255,temp);
+	Format(temp,255,"Headshots: %d   %T: %d   TKs: %d\n ",session[client][HEADSHOTS],"Suicides",client,session[client][SUICIDES],session[client][TK]);
+	StrCat(text,255,temp);
+	AddMenuItem(panel,"",text);
+	text="";
+	
+	Format(temp,sizeof(temp),"- %T\n","RoundStats",client);
+	StrCat(text,255,temp);
+	Format(temp,255,"%T: %d/%d   %T: %d/%d\n ","TRWins",client,session[client][TR_WIN],session[client][ROUNDS_TR],"CTWins",client,session[client][CT_WIN],session[client][ROUNDS_CT]);
+	StrCat(text,255,temp);
+	AddMenuItem(panel,"",text);
+	text="";
+	
+	Format(temp,sizeof(temp),"- %T\n","HitStats",client);
+	StrCat(text,255,temp);
+	Format(temp,255,"%T: %d   %T: %d   %T: %.2f%%\n ","Shots",client,shots,"Hits",client,session[client][HITS],"Accuracy",client,IntToFloat(session[client][HITS])/shots*100);
+	StrCat(text,255,temp);
+	AddMenuItem(panel,"",text);
+	text="";
+	
+	Format(temp,sizeof(temp),"- %T\n","BombHostagesStats",client);
+	StrCat(text,255,temp);
+	Format(temp,255,"%T: %d   %T: %d   %T: %d\n","PlantedBombs",client,session[client][C4_PLANTED],"ExplodedBombs",client,session[client][C4_EXPLODED],"DefusedBombs",client,session[client][C4_DEFUSED]);
+	StrCat(text,255,temp);
+	Format(temp,255,"%T: %d","RescuedHostages",client,session[client][HOSTAGES_RESCUED]);
+	StrCat(text,255,temp);
+	AddMenuItem(panel,"",text);
+	text="";
+	
+	if(g_vip_enabled){
+		Format(temp,sizeof(temp),"- %T\n","VIPStats",client);
+		StrCat(text,255,temp);
+		Format(temp,255,"%T: %d/%d   %T: %d\n ","VIPEscapes",client,session[client][VIP_ESCAPED],session[client][VIP_PLAYED],"VIPsKilled",client,session[client][VIP_KILLED]);
+		StrCat(text,255,temp);
+		AddMenuItem(panel,"",text);
+		text="";
+	}
+	
+	Format(temp,sizeof(temp),"- %T\n","OtherStats",client);
+	StrCat(text,255,temp);
+	new time = GetTime()-session[client][CONNECTED];
+	new hours = RoundToFloor(time/3600.0);
+	time = time-(hours*3600);
+	
+	new minutes = RoundToFloor(time/60.0);
+	time = time-(minutes*60);
+	
+	Format(temp,255,"%T","TimeConnected",client,hours,minutes,time);
+	StrCat(text,255,temp);
+	AddMenuItem(panel,"",text);
+	text="";
+	
+	DisplayMenu(panel,client,MENU_TIME_FOREVER);
+	return Plugin_Handled;
+}
+
+public Action:CMD_HitBox(client,args){
+	if(!g_enabled) 
+		return Plugin_Continue;
+	if(client == 0 || !IsClientInGame(client))
+		return Plugin_Handled;
+
+	new Handle:panel = CreateMenuEx(_,MenuHandler_DoNothing,MENU_ACTIONS_ALL);
+	new String:temp[255];
+	new ihits;
+	new Float:hits;
+	ihits = stats[client][HITS];
+	new String:text[255];
+	if(ihits == 0)
+		hits= 1.0;
+	else
+		hits = IntToFloat(ihits);
+	
+	Format(temp,255,"HitBox:\n");
+	StrCat(text,255,temp);
+	Format(temp,255,"%T: %d (%.2f%%)\n","Head",client,hitbox[client][1],(hitbox[client][1]/hits)*100);
+	StrCat(text,255,temp);
+	Format(temp,255,"%T: %d (%.2f%%)\n","Chest",client,hitbox[client][2],(hitbox[client][2]/hits)*100);
+	StrCat(text,255,temp);
+	Format(temp,255,"%T: %d (%.2f%%)\n","Stomach",client,hitbox[client][3],(hitbox[client][3]/hits)*100);
+	StrCat(text,255,temp);
+	Format(temp,255,"%T: %d (%.2f%%)\n","LeftArm",client,hitbox[client][4],(hitbox[client][4]/hits)*100);
+	StrCat(text,255,temp);
+	Format(temp,255,"%T: %d (%.2f%%)\n","RightArm",client,hitbox[client][5],(hitbox[client][5]/hits)*100);
+	StrCat(text,255,temp);
+	Format(temp,255,"%T: %d (%.2f%%)\n","LeftLeg",client,hitbox[client][6],(hitbox[client][6]/hits)*100);
+	StrCat(text,255,temp);
+	Format(temp,255,"%T: %d (%.2f%%)","RightLeg",client,hitbox[client][7],(hitbox[client][7]/hits)*100);
+	StrCat(text,255,temp);
+	AddMenuItem(panel,"",text);
+
+	DisplayMenu(panel,client,MENU_TIME_FOREVER);
+	
+	return Plugin_Handled;
+}
+public Action:CMD_WeaponMe(client,args){
+	if(!g_enabled) 
+		return Plugin_Continue;
+	if(client == 0 || !IsClientInGame(client))
+		return Plugin_Handled;
+	new weapons_a[28];
+	for(new a=0;a<=27;a++){
+		weapons_a[a] = weapons[client][a];
+	}
+	new weapons_b[28][2];
+	new index;
+	new start;
+	new bool:indexs[28];
+	for(new a =0; a<=27;a++){
+		index =Array_FindHighestValue(weapons_a, sizeof(weapons_a));
+		weapons_b[a][0] = index;
+		weapons_b[a][1] = weapons_a[index];
+		
+		
+		if(weapons_a[index] == 0){
+			start=a;
+			break;
+		}
+		weapons_a[index] = 0;
+		indexs[index]=true;
+	}
+
+	for(new b=0; b<=27; b++){
+	
+		if(indexs[b] ==false){
+			if(start <=27)
+				weapons_b[start][0]=b;
+			
+			start++;
+		}
+	}
+	new Handle:panel = CreateMenu(MenuHandler_DoNothing);
+	
+	new ikills =stats[client][KILLS];
+	
+	new Float:hits;
+	if(ikills == 0)
+		hits= 1.0;
+	else
+		hits = IntToFloat(ikills);
+
+	new String:temp[255];
+	Format(temp,sizeof(temp),"%T","WeaponsStats",client);
+	SetMenuTitle(panel, temp);
+	for(new i=0;i<=27;i++){
+		Format(temp,sizeof(temp),"%s: %d (%.2f%%)",weapons_names1[weapons_b[i][0]],weapons_b[i][1],(weapons_b[i][1]/hits)*100);
+		AddMenuItem(panel,temp,temp,ITEMDRAW_DISABLED);
+	}
+	
+	DisplayMenu(panel,client,MENU_TIME_FOREVER);
+	return Plugin_Handled;
+}
+
+public Action:CMD_StatsMe(client,args){
+	if(!g_enabled) 
+		return Plugin_Continue;
+	if(client == 0 || !IsClientInGame(client))
+		return Plugin_Handled;
+	new String:query[500];
+	Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d' ORDER BY score DESC",g_minimal_kills);
+	SQL_TQuery(stats_db,SQL_StatsMeCallback,query,client);
+	return Plugin_Handled;
+	
+}
+
+
+public SQL_StatsMeCallback(Handle:owner, Handle:hndl, const String:error[], any:client)
+
+{
+	if(hndl == INVALID_HANDLE)
+	{
+		LogError("[RankMe] Query Fail: %s", error);
+		return;
+	}
+	if(client == 0 || !IsClientInGame(client))
+		return;
+	new i;
+	total_players =SQL_GetRowCount(hndl);
+	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
+	{
+		i++;
+		new String:Auth_receive[32];
+		SQL_FetchString(hndl,1,Auth_receive,32);
+		
+		new String:auth[32];
+		GetClientAuthString(client,auth,sizeof(auth));
+		if(StrEqual(Auth_receive,auth,false)){
+			new Handle:panel = CreateMenuEx(_,MenuHandler_DoNothing,MENU_ACTIONS_ALL);
+			new String:text[255];
+			SetMenuPagination(panel,4);
+			new ikills = stats[client][KILLS];
+			new ideaths=stats[client][DEATHS];
+			new deaths;
+			if(ideaths == 0)
+				deaths = 1;
+			else 
+				deaths=ideaths;
+			new Float:kills = IntToFloat(ikills);
+			new shots;
+			if(stats[client][SHOTS] == 0)
+				shots = 1;
+			else
+				shots = stats[client][SHOTS];
+			new String:temp[255];
+			Format(temp,sizeof(temp),"- %T\n","BasicStats",client);
+			StrCat(text,255,temp);
+			Format(temp,sizeof(temp),"Rank: %i/%i   %T: %i [%i]\n",i,SQL_GetRowCount(hndl),"Points",client,stats[client][SCORE],session[client][SCORE]);
+			StrCat(text,255,temp);
+			Format(temp,255,"%T   KDR: %.2f\n","KillsDeaths",client,ikills,ideaths,kills/deaths);
+			StrCat(text,255,temp);
+			Format(temp,255,"Headshots: %d   %T: %d   TKs: %d\n ",stats[client][HEADSHOTS],"Suicides",client,stats[client][SUICIDES],stats[client][TK]);
+			StrCat(text,255,temp);
+			AddMenuItem(panel,"",text);
+			text="";
+			
+			Format(temp,sizeof(temp),"- %T\n","RoundStats",client);
+			StrCat(text,255,temp);
+			Format(temp,255,"%T: %d/%d   %T: %d/%d\n ","TRWins",client,stats[client][TR_WIN],stats[client][ROUNDS_TR],"CTWins",client,stats[client][CT_WIN],stats[client][ROUNDS_CT]);
+			StrCat(text,255,temp);
+			AddMenuItem(panel,"",text);
+			text="";
+			
+			Format(temp,sizeof(temp),"- %T\n","HitStats",client);
+			StrCat(text,255,temp);
+			Format(temp,255,"%T: %d   %T: %d   %T: %.2f%%\n ","Shots",client,shots,"Hits",client,stats[client][HITS],"Accuracy",client,IntToFloat(stats[client][HITS])/shots*100);
+			StrCat(text,255,temp);
+			AddMenuItem(panel,"",text);
+			text="";
+			
+			Format(temp,sizeof(temp),"- %T\n","BombHostagesStats",client);
+			StrCat(text,255,temp);
+			Format(temp,255,"%T: %d   %T: %d   %T: %d\n","PlantedBombs",client,stats[client][C4_PLANTED],"ExplodedBombs",client,stats[client][C4_EXPLODED],"DefusedBombs",client,stats[client][C4_DEFUSED]);
+			StrCat(text,255,temp);
+			Format(temp,255,"%T: %d","RescuedHostages",client,stats[client][HOSTAGES_RESCUED]);
+			StrCat(text,255,temp);
+			AddMenuItem(panel,"",text);
+			text="";
+						
+			if(g_vip_enabled){
+				Format(temp,sizeof(temp),"- %T\n","VIPStats",client);
+				StrCat(text,255,temp);
+				Format(temp,255,"%T: %d/%d   %T: %d\n ","VIPEscapes",client,stats[client][VIP_ESCAPED],stats[client][VIP_PLAYED],"VIPsKilled",client,stats[client][VIP_KILLED]);
+				StrCat(text,255,temp);
+				AddMenuItem(panel,"",text);
+				text="";
+			}
+			
+			Format(temp,sizeof(temp),"- %T\n","OtherStats",client);
+			StrCat(text,255,temp);
+			new time = stats[client][CONNECTED] + GetTime()-session[client][CONNECTED];
+			new hours = RoundToFloor(time/3600.0);
+			time = time-(hours*3600);
+			
+			new minutes = RoundToFloor(time/60.0);
+			time = time-(minutes*60);
+			
+			Format(temp,255,"%T","TimeConnected",client,hours,minutes,time);
+			StrCat(text,255,temp);
+			AddMenuItem(panel,"",text);
+			text="";
+			DisplayMenu(panel,client,MENU_TIME_FOREVER);
+			
+		}
+	}
+}
+public PanelNoHandle(Handle:menu, MenuAction:action, param1, param2){
+
+	
+
+}
+
+public Action:CMD_Next(client,args){
+	if(!g_enabled) 
+		return Plugin_Continue;
+	if(client == 0 || !IsClientInGame(client))
+		return Plugin_Handled;
+	new String:query[500];
+	Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d' ORDER BY score DESC",g_minimal_kills);
+	SQL_TQuery(stats_db,SQL_NextCallback,query,client);
+	return Plugin_Handled;
+}
+
+
+public SQL_NextCallback(Handle:owner, Handle:hndl, const String:error[], any:client)
+
+{
+	if(hndl == INVALID_HANDLE)
+	{
+		LogError("[RankMe] Query Fail: %s", error);
+		return;
+	}
+	if(client == 0 || !IsClientInGame(client))
+		return;
+	new i;
+	new a;
+	total_players =SQL_GetRowCount(hndl);
+	new String:next_players_name[10][MAX_NAME_LENGTH];
+	new next_players_score[10];
+	new bool:dobreak;
+	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
+	{
+		i++;
+		new String:Auth_receive[32];
+		SQL_FetchString(hndl,1,Auth_receive,32);
+		
+		new String:auth[32];
+		GetClientAuthString(client,auth,sizeof(auth));
+		
+		if(StrEqual(Auth_receive,auth,false)){
+		
+			dobreak=true;
+		
+		}
+		else {
+		
+			if(i<=10){
+				SQL_FetchString(hndl,2,next_players_name[i-1],MAX_NAME_LENGTH-1);
+				next_players_score[i-1]=SQL_FetchInt(hndl,4);
+			}
+			else {
+				for(a=0;a<9;a++){
+				
+					next_players_score[a] = next_players_score[a+1];
+					strcopy(next_players_name[a],MAX_NAME_LENGTH-1,next_players_name[a+1]);
+				}
+				SQL_FetchString(hndl,2,next_players_name[9],MAX_NAME_LENGTH-1);
+				next_players_score[9]=SQL_FetchInt(hndl,4);
+			}
+		}
+		if(dobreak)
+			break;
+	} 
+	new Handle:panel = CreateMenuEx(_,MenuHandler_DoNothing,MENU_ACTIONS_ALL);
+	new String:text[500];
+	new String:temp[255];
+	Format(temp,sizeof(temp),"%T\n","Next9Players",client);
+	StrCat(text,255,temp);
+	
+	new max;
+	if(i<10){
+		max = i-1; 
+	} else {
+		max = 9;
+	}
+	for(new b=0;b<=max;b++){
+		if(!StrEqual(next_players_name[b],"",false)){
+			Format(temp,sizeof(temp),"- %s (%d) => +%d\n",next_players_name[b],next_players_score[b],next_players_score[b]-stats[client][SCORE]);
+			StrCat(text,500,temp);
+		}
+		
+	}
+	AddMenuItem(panel,"",text);
+	DisplayMenu(panel,client,MENU_TIME_FOREVER);
+	
+	CloseHandle(panel);
+}
+
+public Action:CMD_ResetOwnRank(client,args){
+
+	if(!g_enabled || !g_resetownrank) 
+		return Plugin_Continue;
+	if(client == 0 || !IsClientInGame(client))
+		return Plugin_Handled;
+	new String:auth[64];
+	GetClientAuthString(client,auth,sizeof(auth));
+	new String:query[100];
+	Format(query,sizeof(query),"DELETE FROM rankme WHERE steam='%s'",auth);
+	SQL_TQuery(stats_db,SQL_NothingCallback,query);
+	LogAction(client,-1,"[RankMe]: Reseted own rank (%s)",auth);
+	OnClientPutInServer(client);
+	ReplyToCommand(client,"[RankMe]: Reseted");
+	return Plugin_Handled;
+}
+
+public Float:IntToFloat(integer){
+	
+	new String:s[300];
+	IntToString(integer,s,sizeof(s));
+	return StringToFloat(s);
+}
+public FloatToInt(Float:ifloat){
+	new String:s[300];
+	FloatToString(ifloat,s,sizeof(s));
+	return StringToInt(s);
+}
