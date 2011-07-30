@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.0.6"
+#define PLUGIN_VERSION "2.0.7"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -1022,7 +1022,7 @@ public Action:EventPlayerDeath(Handle:event, const String:name[], bool:dontBroad
 				if(g_chatchange){
 					CPrintToChat(victim,"%s %t",MSG,"KillingBothNotRanked",aname,stats[attacker][SCORE],score_dif,vname,stats[victim][SCORE],stats[attacker][KILLS],g_minimal_kills,stats[victim][KILLS],g_minimal_kills);
 					if(attacker < MAXPLAYERS)
-						CPrintToChat(attacker,"%s %t",MSG,"KillingBothNotRanked",aname,stats[attacker][SCORE],score_dif,vname,stats[victim][SCORE],stats[attacker][KILLS],g_minimal_kills,stats[victim][KILLS]);
+						CPrintToChat(attacker,"%s %t",MSG,"KillingBothNotRanked",aname,stats[attacker][SCORE],score_dif,vname,stats[victim][SCORE],stats[attacker][KILLS],g_minimal_kills,stats[victim][KILLS],g_minimal_kills);
 				}
 			} else if(stats[victim][KILLS] < g_minimal_kills){
 				if(g_chatchange){
