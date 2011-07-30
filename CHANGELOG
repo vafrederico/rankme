@@ -185,3 +185,6 @@
 = V.2.0.5 (07/24/11):
 	 => Fix:
 		   = Fixed stats being queried without DESC caused by the last version.
+= V.2.0.6 (07/29/11):
+	 => Fix:
+		   = Fixed PL translation. (thanks sajmon83)

@@ -38,7 +38,7 @@
     }
     "VIPKilled"
     {
-        ""pl"        "{lightgreen}{1}{default} ({2}) uzyskal {3} punkt(y/ów) za zabicie VIP'a."
+        "pl"        "{lightgreen}{1}{default} ({2}) uzyskal {3} punkt(y/ów) za zabicie VIP'a."
     } 
 	"GotPointsBy"
 	{
