@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.0.7"
+#define PLUGIN_VERSION "2.0.8"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -52,6 +52,7 @@ new Handle:cvar_minimumplayers;
 new Handle:cvar_vip_enabled;
 new Handle:cvar_points_lose_tk;
 new Handle:cvar_points_lose_suicide;
+new Handle:cvar_show_bots_on_rank;
 
 new bool:g_enabled;
 new bool:g_resetownrank;
@@ -61,6 +62,7 @@ new bool:g_silenttrigger;
 new bool:g_points_lose_round_ceil;
 new bool:g_show_rank_all;
 new bool:g_vip_enabled;
+new bool:g_show_bots_on_rank;
 new g_points_bomb_defused_team;
 new g_points_bomb_defused_player;
 new g_points_bomb_planted_team;
@@ -164,6 +166,7 @@ public OnPluginStart(){
 	cvar_points_lose_round_ceil = CreateConVar("rankme_points_lose_round_ceil","1","If the points is f1oat, round it to next the highest or lowest? 1 = highest 0 = lowest",_,true,0.0,true,1.0);
 	cvar_chatchange = CreateConVar("rankme_changes_chat","1","Show points changes on chat? 1 = true 0 = false",_,true,0.0,true,1.0);
 	cvar_show_rank_all = CreateConVar("rankme_show_rank_all","0","When rank command is used, show for all the rank of the player? 1 = true 0 = false",_,true,0.0,true,1.0);
+	cvar_show_bots_on_rank = CreateConVar("rankme_show_bots_on_rank","0","Show bots on rank/top/etc? 1 = true 0 = false",_,true,0.0,true,1.0);
 	cvar_resetownrank = CreateConVar("rankme_resetownrank","0","Allow player to reset his own rank? 1 = true 0 = false",_,true,0.0,true,1.0);
 	cvar_minimumplayers = CreateConVar("rankme_minimumplayers","2","Minimum players to start giving points",_,true,0.0);
 	cvar_vip_enabled = CreateConVar("rankme_vip_enabled","0","Show AS_ maps statiscs (VIP mod) on statsme and session?",_,true,0.0,true,1.0);
@@ -178,6 +181,7 @@ public OnPluginStart(){
 	
 	HookConVarChange(cvar_enabled,OnConVarChanged);
 	HookConVarChange(cvar_chatchange,OnConVarChanged);
+	HookConVarChange(cvar_show_bots_on_rank,OnConVarChanged);
 	HookConVarChange(cvar_show_rank_all,OnConVarChanged);
 	HookConVarChange(cvar_resetownrank,OnConVarChanged);
 	HookConVarChange(cvar_minimumplayers,OnConVarChanged);
@@ -500,6 +504,7 @@ public OnConfigsExecuted(){
 		SQL_TQuery(stats_db,SQL_PurgeCallback,query);
 	}
 	
+	g_show_bots_on_rank = GetConVarBool(cvar_show_bots_on_rank);
 	g_enabled = GetConVarBool(cvar_enabled);
 	g_chatchange = GetConVarBool(cvar_chatchange);
 	g_show_rank_all = GetConVarBool(cvar_show_rank_all);
@@ -1295,7 +1300,7 @@ public SQL_DumpCallback(Handle:owner, Handle:hndl, const String:error[], any:Dat
 }
 
 public OnConVarChanged(Handle:convar, const String:oldValue[], const String:newValue[]){
-
+	g_show_bots_on_rank = GetConVarBool(cvar_show_bots_on_rank);
 	g_enabled = GetConVarBool(cvar_enabled);
 	g_show_rank_all = GetConVarBool(cvar_show_rank_all);
 	g_chatchange = GetConVarBool(cvar_chatchange);

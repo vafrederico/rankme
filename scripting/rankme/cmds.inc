@@ -130,7 +130,7 @@ ShowTOP(client,at){
 		
 	}
 	new String:query[200];
-	if(g_rankbots)
+	if(g_rankbots && g_show_bots_on_rank)
 		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC LIMIT %i, 10",g_minimal_kills,at-1);
 	else
 		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC LIMIT %i, 10",g_minimal_kills,at-1);
@@ -249,7 +249,7 @@ ShowTOPKnife(client,at){
 		
 	}
 	new String:query[200];
-	if(g_rankbots)
+	if(g_rankbots && g_show_bots_on_rank)
 		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY knife DESC LIMIT %i, 10",g_minimal_kills,at-1);
 	else
 		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY knife DESC LIMIT %i, 10",g_minimal_kills,at-1);
@@ -346,7 +346,7 @@ public Action:CMD_Rank(client,args){
 		return Plugin_Handled;
 	}
 	new String:query[500];
-	if(g_rankbots)
+	if(g_rankbots && g_show_bots_on_rank)
 		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC",g_minimal_kills);
 	else
 		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC",g_minimal_kills);
@@ -586,7 +586,7 @@ public Action:CMD_StatsMe(client,args){
 	if(client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 	new String:query[500];
-	if(g_rankbots)
+	if(g_rankbots && g_show_bots_on_rank)
 		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC",g_minimal_kills);
 	else
 		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC",g_minimal_kills);
@@ -707,7 +707,7 @@ public Action:CMD_Next(client,args){
 	if(client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 	new String:query[500];
-	if(g_rankbots)
+	if(g_rankbots && g_show_bots_on_rank)
 		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC",g_minimal_kills);
 	else
 		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC",g_minimal_kills);
