@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.0.8"
+#define PLUGIN_VERSION "2.1.0"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -11,8 +11,11 @@
 new String:sql_criar[] = "CREATE TABLE IF NOT EXISTS rankme (id INTEGER PRIMARY KEY, steam TEXT, name TEXT, lastip TEXT, score NUMERIC, kills NUMERIC, deaths NUMERIC, suicides NUMERIC, tk NUMERIC, shots NUMERIC, hits NUMERIC, headshots NUMERIC, connected NUMERIC, rounds_tr NUMERIC, rounds_ct NUMERIC, lastconnect NUMERIC,knife NUMERIC,glock NUMERIC,usp NUMERIC,p228 NUMERIC,deagle NUMERIC,elite NUMERIC,fiveseven NUMERIC,m3 NUMERIC,xm1014 NUMERIC,mac10 NUMERIC,tmp NUMERIC,mp5navy NUMERIC,ump45 NUMERIC,p90 NUMERIC,galil NUMERIC,ak47 NUMERIC,sg550 NUMERIC,famas NUMERIC,m4a1 NUMERIC,aug NUMERIC,scout NUMERIC,sg552 NUMERIC,awp NUMERIC,g3sg1 NUMERIC,m249 NUMERIC,hegrenade NUMERIC,flashbang NUMERIC,smokegrenade NUMERIC, head NUMERIC, chest NUMERIC, stomach NUMERIC, left_arm NUMERIC, right_arm NUMERIC, left_leg NUMERIC, right_leg NUMERIC,c4_planted NUMERIC,c4_exploded NUMERIC,c4_defused NUMERIC,ct_win NUMERIC, tr_win NUMERIC, hostages_rescued NUMERIC, vip_killed NUMERIC, vip_escaped NUMERIC, vip_played NUMERIC);";
 new String:sql_iniciar[] = "INSERT INTO rankme VALUES (NULL,'%s','%s','%s','%d','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0');";
 new String:sql_salvar[] = "UPDATE rankme SET score = '%i', kills = '%i', deaths='%i',suicides='%i',tk='%i',shots='%i',hits='%i',headshots='%i', rounds_tr = '%i', rounds_ct = '%i',lastip='%s',name='%s'%s,head='%i',chest='%i', stomach='%i',left_arm='%i',right_arm='%i',left_leg='%i',right_leg='%i',c4_planted='%i',c4_exploded='%i',c4_defused='%i',ct_win='%i',tr_win='%i', hostages_rescued='%i',vip_killed = '%d',vip_escaped = '%d',vip_played = '%d' WHERE steam = '%s';";
+new String:sql_salvar_name[] = "UPDATE rankme SET score = '%i', kills = '%i', deaths='%i',suicides='%i',tk='%i',shots='%i',hits='%i',headshots='%i', rounds_tr = '%i', rounds_ct = '%i',lastip='%s',name='%s'%s,head='%i',chest='%i', stomach='%i',left_arm='%i',right_arm='%i',left_leg='%i',right_leg='%i',c4_planted='%i',c4_exploded='%i',c4_defused='%i',ct_win='%i',tr_win='%i', hostages_rescued='%i',vip_killed = '%d',vip_escaped = '%d',vip_played = '%d' WHERE name = '%s';";
 new String:sql_connects[] = "UPDATE rankme SET lastconnect='%i', connected='%i' WHERE steam = '%s';";
+new String:sql_connects_name[] = "UPDATE rankme SET lastconnect='%i', connected='%i' WHERE name = '%s';";
 new String:sql_retrieveclient[] = "SELECT * FROM rankme WHERE steam='%s';";
+new String:sql_retrieveclient_name[] = "SELECT * FROM rankme WHERE name='%s';";
 new String:weapons_names[28][] = {"knife","glock","usp","p228","deagle","elite","fiveseven","m3","xm1014","mac10","tmp","mp5navy","ump45","p90","galil","ak47","sg550","famas","m4a1","aug","scout","sg552","awp","g3sg1","m249","hegrenade","flashbang","smokegrenade"};
 new String:weapons_names1[28][] = {"Knife"," 9x19 mm Sidearm (Glock)","KM .45 Tactical (USP)","228 Compact","Knighthawk .50C (Desert Eagle)",".40 Dual Elites","ES Five-Seven","Leone 12 Gauge Super","Leone YG1265 Auto Shotgun","Ingram MAC-10","Schmidt Machine Pistol (TMP)","KM Submachine Gun (MP5)","KM UMP45","ES C90 (P90)","IDF Defender","CV-47 (AK-47)","Kreig 550 Commando (SG550)","Clarion 5.56","Maverick M4A1 Carbine (Colt)","Bullpup (AUG)","Schmidt Scout","Kreig 552","Magnum Sniper Rifle (AWP)","D3/AU-1 (G3)","M249","HE Grenade","Flashbang","Smoke Grenade"};
 new Handle:cvar_enabled;
@@ -53,8 +56,10 @@ new Handle:cvar_vip_enabled;
 new Handle:cvar_points_lose_tk;
 new Handle:cvar_points_lose_suicide;
 new Handle:cvar_show_bots_on_rank;
+new Handle:cvar_rankbyname;
 
 new bool:g_enabled;
+new bool:g_rankbyname;
 new bool:g_resetownrank;
 new bool:g_chatchange;
 new bool:g_rankbots;
@@ -176,6 +181,7 @@ public OnPluginStart(){
 	cvar_points_vip_killed_player = CreateConVar("rankme_points_vip_killed_player","2","How many points the TR who killed the VIP got additional?",_,true,0.0);
 	cvar_points_lose_tk = CreateConVar("rankme_points_lose_tk","0","How many points a player lose for Team Killing?",_,true,0.0);
 	cvar_points_lose_suicide = CreateConVar("rankme_points_lose_suicide","0","How many points a player lose for Suiciding?",_,true,0.0);
+	cvar_rankbyname = CreateConVar("rankme_rank_by_name","0","Rank players by name? 1 = true 0 = false",_,true,0.0,true,1.0);
 	
 	AutoExecConfig(true,"rankme");
 	
@@ -217,6 +223,7 @@ public OnPluginStart(){
 	HookConVarChange(cvar_points_vip_killed_player,OnConVarChanged);
 	HookConVarChange(cvar_points_lose_tk,OnConVarChanged);
 	HookConVarChange(cvar_points_lose_suicide,OnConVarChanged);
+	HookConVarChange(cvar_rankbyname,OnConVarChanged);
 	for(new i=1;i<=MaxClients;i++){
 		if(IsClientInGame(i))
 			OnClientPutInServer(i);
@@ -505,6 +512,7 @@ public OnConfigsExecuted(){
 	}
 	
 	g_show_bots_on_rank = GetConVarBool(cvar_show_bots_on_rank);
+	g_rankbyname = GetConVarBool(cvar_rankbyname);
 	g_enabled = GetConVarBool(cvar_enabled);
 	g_chatchange = GetConVarBool(cvar_chatchange);
 	g_show_rank_all = GetConVarBool(cvar_show_rank_all);
@@ -562,19 +570,23 @@ public Action:OnClientChangeName(Handle:event, const String:name[], bool:dontBro
 		return Plugin_Continue;
 	if(IsClientConnected(client))
 	{
-		decl String:auth[32];
-		GetClientAuthString(client,auth,sizeof(auth));
-		decl String:clientnewname[MAX_NAME_LENGTH];
-		
-		GetEventString(event, "newname", clientnewname, sizeof(clientnewname));
-		if(client==c4_planted_by)
-			strcopy(c4_planted_by_name,sizeof(c4_planted_by_name),clientnewname);
-		//SQL_EscapeString(stats_db,clientnewname,clientnewname,sizeof(clientnewname));
-		ReplaceString(clientnewname, sizeof(clientnewname), "'", "");
-		new String:query[500];
-		Format(query,sizeof(query),"UPDATE rankme SET name='%s' WHERE steam = '%s';",clientnewname,auth);
-		
-		SQL_TQuery(stats_db,SQL_NothingCallback,query);
+		if(g_rankbyname){
+			OnClientPutInServer(client);
+		} else {
+			decl String:auth[32];
+			GetClientAuthString(client,auth,sizeof(auth));
+			decl String:clientnewname[MAX_NAME_LENGTH];
+			
+			GetEventString(event, "newname", clientnewname, sizeof(clientnewname));
+			if(client==c4_planted_by)
+				strcopy(c4_planted_by_name,sizeof(c4_planted_by_name),clientnewname);
+			//SQL_EscapeString(stats_db,clientnewname,clientnewname,sizeof(clientnewname));
+			ReplaceString(clientnewname, sizeof(clientnewname), "'", "");
+			new String:query[500];
+			Format(query,sizeof(query),"UPDATE rankme SET name='%s' WHERE steam = '%s';",clientnewname,auth);
+			
+			SQL_TQuery(stats_db,SQL_NothingCallback,query);
+		}
 	}
 	return Plugin_Continue;
 }
@@ -919,7 +931,7 @@ public Action:Event_BombExploded( Handle:event, const String:name[], bool:dontBr
 		return;
 	if(g_points_bomb_explode_team > 0)
 		CPrintToChatAll("%s %t",MSG,"TR_Exploding",g_points_bomb_explode_team);
-	if(g_points_bomb_explode_player > 0 && client != 0 && (g_rankbots || !IsFakeClient(client))) 
+	if(g_points_bomb_explode_player > 0 && client != 0 && (g_rankbots || (IsClientInGame(client) && !IsFakeClient(client)))) 
 		CPrintToChatAll("%s %t",MSG,"Exploding",c4_planted_by_name,stats[client][SCORE],g_points_bomb_explode_team+g_points_bomb_explode_player);
 }
 
@@ -1114,18 +1126,26 @@ public SalvarPlayer(client){
 		Format(weapons_query,sizeof(weapons_query),"%s,%s='%d'",weapons_query,weapons_names[i],weapons[client][i]);
 	}
 	new String:query[1500];
-	Format(query,sizeof(query),sql_salvar,stats[client][SCORE],stats[client][KILLS],stats[client][DEATHS],stats[client][SUICIDES],stats[client][TK],
+	if(g_rankbyname){
+		Format(query,sizeof(query),sql_salvar_name,stats[client][SCORE],stats[client][KILLS],stats[client][DEATHS],stats[client][SUICIDES],stats[client][TK],
+			stats[client][SHOTS],stats[client][HITS],stats[client][HEADSHOTS],stats[client][ROUNDS_TR],stats[client][ROUNDS_CT],ip,name,weapons_query,
+			hitbox[client][1],hitbox[client][2],hitbox[client][3],hitbox[client][4],hitbox[client][5],hitbox[client][6],hitbox[client][7],stats[client][C4_PLANTED],stats[client][C4_EXPLODED],stats[client][C4_DEFUSED],stats[client][CT_WIN],stats[client][TR_WIN],stats[client][HOSTAGES_RESCUED],stats[client][VIP_KILLED],stats[client][VIP_ESCAPED],stats[client][VIP_PLAYED],name);
+	} else {
+		Format(query,sizeof(query),sql_salvar,stats[client][SCORE],stats[client][KILLS],stats[client][DEATHS],stats[client][SUICIDES],stats[client][TK],
 			stats[client][SHOTS],stats[client][HITS],stats[client][HEADSHOTS],stats[client][ROUNDS_TR],stats[client][ROUNDS_CT],ip,name,weapons_query,
 			hitbox[client][1],hitbox[client][2],hitbox[client][3],hitbox[client][4],hitbox[client][5],hitbox[client][6],hitbox[client][7],stats[client][C4_PLANTED],stats[client][C4_EXPLODED],stats[client][C4_DEFUSED],stats[client][CT_WIN],stats[client][TR_WIN],stats[client][HOSTAGES_RESCUED],stats[client][VIP_KILLED],stats[client][VIP_ESCAPED],stats[client][VIP_PLAYED],auth);
+	}
 	SQL_TQuery(stats_db,SQL_NothingCallback,query);
 
 	if(DEBUGGING){
 		PrintToServer(query);
 		LogError("%s",query);
 	}
-	
-	Format(query,sizeof(query),sql_connects,GetTime(),stats[client][CONNECTED] + GetTime()-session[client][CONNECTED],auth);
-	
+	if(g_rankbyname){
+		Format(query,sizeof(query),sql_connects_name,GetTime(),stats[client][CONNECTED] + GetTime()-session[client][CONNECTED],name);
+	} else {
+		Format(query,sizeof(query),sql_connects,GetTime(),stats[client][CONNECTED] + GetTime()-session[client][CONNECTED],auth);
+	}
 	SQL_TQuery(stats_db,SQL_NothingCallback,query);
 	
 	if(DEBUGGING){
@@ -1160,7 +1180,10 @@ public OnClientPutInServer(client){
 	GetClientIP(client,ip,sizeof(ip));
 	
 	new String:query[500];
-	Format(query,sizeof(query),sql_retrieveclient,auth);
+	if(g_rankbyname)
+		Format(query,sizeof(query),sql_retrieveclient_name,name);
+	else
+		Format(query,sizeof(query),sql_retrieveclient,auth);
 	if(DEBUGGING){
 		PrintToServer(query);
 		LogError("%s",query);
@@ -1301,6 +1324,7 @@ public SQL_DumpCallback(Handle:owner, Handle:hndl, const String:error[], any:Dat
 
 public OnConVarChanged(Handle:convar, const String:oldValue[], const String:newValue[]){
 	g_show_bots_on_rank = GetConVarBool(cvar_show_bots_on_rank);
+	g_rankbyname = GetConVarBool(cvar_rankbyname);
 	g_enabled = GetConVarBool(cvar_enabled);
 	g_show_rank_all = GetConVarBool(cvar_show_rank_all);
 	g_chatchange = GetConVarBool(cvar_chatchange);

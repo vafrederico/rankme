@@ -33,7 +33,11 @@ public Action:CMD_ResetRank(client,args){
 	ReplaceString(arg1,sizeof(arg1)," ","");
 	ReplaceString(arg1,sizeof(arg1),"\"","");
 	new String:query[100];
-	Format(query,sizeof(query),"DELETE FROM rankme WHERE steam='%s'",arg1);
+	if(g_rankbyname){
+		Format(query,sizeof(query),"DELETE FROM rankme WHERE name='%s'",arg1);
+	} else {
+		Format(query,sizeof(query),"DELETE FROM rankme WHERE steam='%s'",arg1);
+	}
 	SQL_TQuery(stats_db,SQL_NothingCallback,query);
 	LogAction(client,-1,"[RankMe]: Reseted rank (%s)",arg1);
 	new String:auth[64];
@@ -796,12 +800,17 @@ public Action:CMD_ResetOwnRank(client,args){
 		return Plugin_Continue;
 	if(client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
-	new String:auth[64];
-	GetClientAuthString(client,auth,sizeof(auth));
+	new String:param[64];
 	new String:query[100];
-	Format(query,sizeof(query),"DELETE FROM rankme WHERE steam='%s'",auth);
+	if(g_rankbyname){
+		GetClientName(client,param,sizeof(param));
+		Format(query,sizeof(query),"DELETE FROM rankme WHERE name='%s'",param);
+	} else {
+		GetClientAuthString(client,param,sizeof(param));
+		Format(query,sizeof(query),"DELETE FROM rankme WHERE steam='%s'",param);
+	}
 	SQL_TQuery(stats_db,SQL_NothingCallback,query);
-	LogAction(client,-1,"[RankMe]: Reseted own rank (%s)",auth);
+	LogAction(client,-1,"[RankMe]: Reseted own rank (%s)",param);
 	OnClientPutInServer(client);
 	ReplyToCommand(client,"[RankMe]: Reseted");
 	return Plugin_Handled;

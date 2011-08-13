@@ -194,3 +194,8 @@
 = V.2.0.8 (08/06/11):
 	 => Features:
 		   = Added rankme_show_bots_on_rank cvar. (thanks Teigen)
+= V.2.1.0 (08/13/11):
+	 => Fix:
+		   = Fixed error when the player who planted the bomb disconnect before it explode. (thanks Bacardi)
+	 => Feature:
+		   = Added support for ranking by name. (thanks natino)
