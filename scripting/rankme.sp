@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.1.0"
+#define PLUGIN_VERSION "2.1.1"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -571,7 +571,29 @@ public Action:OnClientChangeName(Handle:event, const String:name[], bool:dontBro
 	if(IsClientConnected(client))
 	{
 		if(g_rankbyname){
-			OnClientPutInServer(client);
+			OnDB[client]=false;
+			for(new i=0;i<=19;i++){
+				session[client][i] = 0;
+				stats[client][i] = 0;
+			}
+			stats[client][SCORE]=g_points_start;
+			for(new i=0;i<=27;i++){
+				weapons[client][i] = 0;
+			}
+			session[client][CONNECTED] = GetTime();
+			
+			decl String:clientnewname[MAX_NAME_LENGTH];
+			GetEventString(event, "newname", clientnewname, sizeof(clientnewname));
+			if(client==c4_planted_by)
+				strcopy(c4_planted_by_name,sizeof(c4_planted_by_name),clientnewname);
+			ReplaceString(clientnewname, sizeof(clientnewname), "'", "");
+			new String:query[500];
+			Format(query,sizeof(query),sql_retrieveclient_name,clientnewname);
+			if(DEBUGGING){
+				PrintToServer(query);
+				LogError("%s",query);
+			}
+			SQL_TQuery(stats_db,SQL_LoadPlayerCallback,query,client);
 		} else {
 			decl String:auth[32];
 			GetClientAuthString(client,auth,sizeof(auth));
@@ -1176,9 +1198,6 @@ public OnClientPutInServer(client){
 	new String:auth[32];
 	GetClientAuthString(client,auth,sizeof(auth));
 	
-	new String:ip[32];
-	GetClientIP(client,ip,sizeof(ip));
-	
 	new String:query[500];
 	if(g_rankbyname)
 		Format(query,sizeof(query),sql_retrieveclient_name,name);
@@ -1233,7 +1252,7 @@ public SQL_LoadPlayerCallback(Handle:owner, Handle:hndl, const String:error[], a
 		new String:ip[32];
 		GetClientIP(client,ip,sizeof(ip));
 		Format(query,sizeof(query),sql_iniciar ,auth,name,ip,g_points_start);
-		SQL_TQuery(stats_db,SQL_NothingCallback,query);
+		SQL_TQuery(stats_db,SQL_NothingCallback,query,_,DBPrio_High);
 		
 		if(DEBUGGING){
 			PrintToServer(query);

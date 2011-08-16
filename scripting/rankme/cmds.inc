@@ -371,27 +371,28 @@ public SQL_RankCallback(Handle:owner, Handle:hndl, const String:error[], any:cli
 	if(client == 0 || !IsClientInGame(client))
 		return;
 	new i;
+	new String:name[256];
+	GetClientName(client, name, sizeof(name));
+	new String:auth[32];
+	GetClientAuthString(client,auth,sizeof(auth));
 	total_players =SQL_GetRowCount(hndl);
+	new String:Name_receive[MAX_NAME_LENGTH];
+	new String:Auth_receive[32];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
 	{
 		i++;
-		new String:Auth_receive[32];
+		SQL_FetchString(hndl,2,Name_receive,MAX_NAME_LENGTH);
 		SQL_FetchString(hndl,1,Auth_receive,32);
-		
-		new String:auth[32];
-		GetClientAuthString(client,auth,sizeof(auth));
-		new Float:kdr;
-		new deaths;
-		if(SQL_FetchInt(hndl,6) == 0)
-			deaths = 1;
-		else 
-			deaths=SQL_FetchInt(hndl,6);
-		
-		kdr = SQL_FetchFloat(hndl,5)/deaths;
-		if(StrEqual(Auth_receive,auth,false)){
-		
-			new String:name[256];
-			GetClientName(client, name, sizeof(name));
+			
+		if((g_rankbyname && StrEqual(Name_receive,name,false)) || (!g_rankbyname && StrEqual(Auth_receive,auth,false))){
+			new Float:kdr;
+			new deaths;
+			if(SQL_FetchInt(hndl,6) == 0)
+				deaths = 1;
+			else 
+				deaths=SQL_FetchInt(hndl,6);
+			
+			kdr = SQL_FetchFloat(hndl,5)/deaths;
 			if(g_show_rank_all){
 				CPrintToChatAll("%s %t",MSG,"IsRankedAt", name,i,SQL_GetRowCount(hndl),stats[client][SCORE],stats[client][KILLS],stats[client][DEATHS],kdr);
 			} else {
@@ -399,7 +400,6 @@ public SQL_RankCallback(Handle:owner, Handle:hndl, const String:error[], any:cli
 			}
 			break;
 		}
-	
 	} 
 }
 public Action:CMD_Session(client,args){
@@ -611,16 +611,21 @@ public SQL_StatsMeCallback(Handle:owner, Handle:hndl, const String:error[], any:
 	if(client == 0 || !IsClientInGame(client))
 		return;
 	new i;
+	new String:auth[32];
+	GetClientAuthString(client,auth,sizeof(auth));
+	new String:name[MAX_NAME_LENGTH];
+	GetClientName(client,name,sizeof(name));
 	total_players =SQL_GetRowCount(hndl);
+	new String:Auth_receive[32];
+	new String:Name_receive[MAX_NAME_LENGTH];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
 	{
 		i++;
-		new String:Auth_receive[32];
 		SQL_FetchString(hndl,1,Auth_receive,32);
 		
-		new String:auth[32];
-		GetClientAuthString(client,auth,sizeof(auth));
-		if(StrEqual(Auth_receive,auth,false)){
+		SQL_FetchString(hndl,2,Name_receive,MAX_NAME_LENGTH);
+		
+		if((g_rankbyname && StrEqual(name,Name_receive)) || (!g_rankbyname && StrEqual(Auth_receive,auth,false))){
 			new Handle:panel = CreateMenuEx(_,MenuHandler_DoNothing,MENU_ACTIONS_ALL);
 			new String:text[255];
 			SetMenuPagination(panel,4);
@@ -736,16 +741,21 @@ public SQL_NextCallback(Handle:owner, Handle:hndl, const String:error[], any:cli
 	new String:next_players_name[10][MAX_NAME_LENGTH];
 	new next_players_score[10];
 	new bool:dobreak;
+	new String:name[MAX_NAME_LENGTH];
+	GetClientName(client,name,sizeof(name));
+	new String:auth[32];
+	GetClientAuthString(client,auth,sizeof(auth));
+	new String:Auth_receive[32];
+	new String:Name_receive[MAX_NAME_LENGTH];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
 	{
 		i++;
-		new String:Auth_receive[32];
+		
 		SQL_FetchString(hndl,1,Auth_receive,32);
+		SQL_FetchString(hndl,2,Name_receive,MAX_NAME_LENGTH);
 		
-		new String:auth[32];
-		GetClientAuthString(client,auth,sizeof(auth));
 		
-		if(StrEqual(Auth_receive,auth,false)){
+		if((g_rankbyname && StrEqual(name,Name_receive)) || (!g_rankbyname && StrEqual(Auth_receive,auth,false))){
 		
 			dobreak=true;
 		
