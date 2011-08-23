@@ -202,3 +202,6 @@
 = V.2.1.1 (08/15/11):
 	 => Fix:
 		   = Fixed when ranking by name some stats weren't working properly. (thanks natino)
+= V.2.1.2 (08/22/11):
+	 => Fix:
+		   = Fixed not being able to reset players when ranking by name if their name had spaces. (thanks natino)

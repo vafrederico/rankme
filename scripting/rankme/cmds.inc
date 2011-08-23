@@ -30,7 +30,7 @@ public Action:CMD_ResetRank(client,args){
 	
 	GetCmdArg(1,arg1,sizeof(arg1));
 	
-	ReplaceString(arg1,sizeof(arg1)," ","");
+	//ReplaceString(arg1,sizeof(arg1)," ","");
 	ReplaceString(arg1,sizeof(arg1),"\"","");
 	new String:query[100];
 	if(g_rankbyname){
