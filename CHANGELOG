@@ -205,3 +205,6 @@
 = V.2.1.2 (08/22/11):
 	 => Fix:
 		   = Fixed not being able to reset players when ranking by name if their name had spaces. (thanks natino)
+= V.2.2.0 (08/13/11):
+	 => Features:
+		   = Added FFA mode. Cvar: rankme_ffa (thanks Fearts)

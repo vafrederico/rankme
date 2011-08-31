@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.1.2"
+#define PLUGIN_VERSION "2.2.0"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -57,6 +57,7 @@ new Handle:cvar_points_lose_tk;
 new Handle:cvar_points_lose_suicide;
 new Handle:cvar_show_bots_on_rank;
 new Handle:cvar_rankbyname;
+new Handle:cvar_ffa;
 
 new bool:g_enabled;
 new bool:g_rankbyname;
@@ -68,6 +69,7 @@ new bool:g_points_lose_round_ceil;
 new bool:g_show_rank_all;
 new bool:g_vip_enabled;
 new bool:g_show_bots_on_rank;
+new bool:g_ffa;
 new g_points_bomb_defused_team;
 new g_points_bomb_defused_player;
 new g_points_bomb_planted_team;
@@ -182,7 +184,7 @@ public OnPluginStart(){
 	cvar_points_lose_tk = CreateConVar("rankme_points_lose_tk","0","How many points a player lose for Team Killing?",_,true,0.0);
 	cvar_points_lose_suicide = CreateConVar("rankme_points_lose_suicide","0","How many points a player lose for Suiciding?",_,true,0.0);
 	cvar_rankbyname = CreateConVar("rankme_rank_by_name","0","Rank players by name? 1 = true 0 = false",_,true,0.0,true,1.0);
-	
+	cvar_ffa = CreateConVar("rankme_ffa","0","FFA mode? 1 = true 0 = false",_,true,0.0,true,1.0);
 	AutoExecConfig(true,"rankme");
 	
 	HookConVarChange(cvar_enabled,OnConVarChanged);
@@ -224,6 +226,7 @@ public OnPluginStart(){
 	HookConVarChange(cvar_points_lose_tk,OnConVarChanged);
 	HookConVarChange(cvar_points_lose_suicide,OnConVarChanged);
 	HookConVarChange(cvar_rankbyname,OnConVarChanged);
+	HookConVarChange(cvar_ffa,OnConVarChanged);
 	for(new i=1;i<=MaxClients;i++){
 		if(IsClientInGame(i))
 			OnClientPutInServer(i);
@@ -518,6 +521,7 @@ public OnConfigsExecuted(){
 	g_show_rank_all = GetConVarBool(cvar_show_rank_all);
 	g_rankbots = GetConVarBool(cvar_rankbots);
 	g_silenttrigger = GetConVarBool(cvar_silenttrigger);
+	g_ffa = GetConVarBool(cvar_ffa);
 	g_points_bomb_defused_team = GetConVarInt(cvar_points_bomb_defused_team);
 	g_points_bomb_defused_player = GetConVarInt(cvar_points_bomb_defused_player);
 	g_points_bomb_planted_team = GetConVarInt(cvar_points_bomb_planted_team);
@@ -979,7 +983,7 @@ public Action:EventPlayerDeath(Handle:event, const String:name[], bool:dontBroad
 			GetClientName(victim,vname,sizeof(vname));
 			CPrintToChat(victim,"%s %t",MSG,"LostSuicide",vname,stats[victim][SCORE],g_points_lose_suicide);
 		}
-	} else if(GetClientTeam(victim) == GetClientTeam(attacker)){
+	} else if(!g_ffa && (GetClientTeam(victim) == GetClientTeam(attacker))){
 		if(attacker < MAXPLAYERS){
 			stats[attacker][TK]++;
 			session[attacker][TK]++;
@@ -1348,6 +1352,7 @@ public OnConVarChanged(Handle:convar, const String:oldValue[], const String:newV
 	g_show_rank_all = GetConVarBool(cvar_show_rank_all);
 	g_chatchange = GetConVarBool(cvar_chatchange);
 	g_rankbots = GetConVarBool(cvar_rankbots);
+	g_ffa = GetConVarBool(cvar_ffa);
 	g_silenttrigger = GetConVarBool(cvar_silenttrigger);
 	g_points_bomb_defused_team = GetConVarInt(cvar_points_bomb_defused_team);
 	g_points_bomb_defused_player = GetConVarInt(cvar_points_bomb_defused_player);
@@ -1378,6 +1383,7 @@ public OnConVarChanged(Handle:convar, const String:oldValue[], const String:newV
 	g_points_vip_killed_team = GetConVarInt(cvar_points_vip_killed_team);
 	g_points_vip_killed_player = GetConVarInt(cvar_points_vip_killed_player);
 	g_vip_enabled = GetConVarBool(cvar_vip_enabled);
+	
 	new String:query[500];
 	if(g_rankbots)
 		Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d'",g_minimal_kills);
