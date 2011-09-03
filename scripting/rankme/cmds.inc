@@ -188,7 +188,7 @@ public SQL_TopWeaponCallback(Handle:owner, Handle:hndl, const String:error[], an
 	new weapon = ReadPackCell(Datapack);
 	new at = ReadPackCell(Datapack);
 	if(!SQL_HasResultSet(hndl)){
-		ShowTOP(client,at-10);
+		ShowTOPWeapon(client,weapon,at-10);
 	}
 	new String:name[256];
 	new String:temp[500];
@@ -204,11 +204,13 @@ public SQL_TopWeaponCallback(Handle:owner, Handle:hndl, const String:error[], an
 		Format(temp,sizeof(temp),"%s%d - %s (%d) - %T: %d\n",temp,i+at,name,SQL_FetchInt(hndl,4),"Kills",client,SQL_FetchInt(hndl,16+weapon));
 	} 
 	Format(temp,sizeof(temp),"%s\n ",temp);
-	AddMenuItem(menu,temp,temp);
+	new String:temp1[20];
+	Format(temp1,sizeof(temp1),"%d;%d",weapon,0);
+	AddMenuItem(menu,temp1,temp);
 	
 	
 	Format(temp,sizeof(temp),"%d;%d",weapon,at+10);
-	new String:temp1[20];
+	
 	Format(temp1,sizeof(temp1),"%T","Next",client);
 	if(i>9)
 		AddMenuItem(menu,temp,temp1);

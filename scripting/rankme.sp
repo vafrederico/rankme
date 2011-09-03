@@ -672,7 +672,7 @@ public Action:Command_SayChat(client, args)
 		{
 			ClientCommand(client,"%s",text);
 		} else {
-			ClientCommand(client,"topknife %s",text[startidx+3]);
+			ClientCommand(client,"topweapon %s",text[startidx+3]);
 		}
 		if(g_silenttrigger)
 			return Plugin_Handled;
