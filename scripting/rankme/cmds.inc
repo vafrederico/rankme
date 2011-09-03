@@ -103,6 +103,143 @@ public SQL_GetPlayersCallback(Handle:owner, Handle:hndl, const String:error[], a
 	}
 	total_players =SQL_GetRowCount(hndl);
 }
+public Action:CMD_TopWeapon(client,args){
+	if(!g_enabled) 
+		return Plugin_Continue;
+	if(client == 0 || !IsClientInGame(client))
+		return Plugin_Handled;
+	
+	new String:arg1[20];
+	new String:arg2[5];
+	GetCmdArg(1,arg1,sizeof(arg1));
+	GetCmdArg(2,arg2,sizeof(arg2));
+	if(!StrEqual(arg1,"") && StringToInt(arg2) != 0){
+		ShowTOPWeapon(client,GetWeaponNum(arg1),StringToInt(arg2));
+	}	else if(!StrEqual(arg1,"")){
+		ShowTOPWeapon(client,GetWeaponNum(arg1),0);
+	} else {
+		new Handle:menu = CreateMenu(MenuHandler_TopWeapon_Choose);
+		SetMenuTitle(menu,"Top Weapon:");
+		for(new i=0;i<=27;i++){
+			AddMenuItem(menu,weapons_names[i],weapons_names1[i]);
+		}
+		DisplayMenu(menu,client,MENU_TIME_FOREVER);
+	}
+	return Plugin_Handled;
+}
+
+public MenuHandler_TopWeapon_Choose(Handle:menu, MenuAction:action, param1, param2){
+	
+	if (action == MenuAction_Select)
+	{
+		new String:temp[250];
+	
+		GetMenuItem(menu, param2, temp, sizeof(temp));
+		if(StringToInt(temp) >= 0){
+			ShowTOPWeapon(param1,GetWeaponNum(temp),0);
+		}
+	}
+	if (action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+}
+ShowTOPWeapon(client,weapon,at){
+	if(client == 0 || !IsClientInGame(client))
+		return;
+	new Handle:Datapack= CreateDataPack();
+	
+	WritePackCell(Datapack,client);
+	WritePackCell(Datapack,weapon);
+	if(at>0){
+		WritePackCell(Datapack,at-1);
+		
+	}	else {
+		WritePackCell(Datapack,0);
+		
+	}
+	new String:query[200];
+	if(g_rankbots && g_show_bots_on_rank)
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY %s DESC LIMIT %i, 10",g_minimal_kills,weapons_names[weapon],at-1);
+	else
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY %s DESC LIMIT %i, 10",g_minimal_kills,weapons_names[weapon],at-1);
+	
+	SQL_TQuery(stats_db,SQL_TopWeaponCallback,query,Datapack);
+
+}
+
+
+public SQL_TopWeaponCallback(Handle:owner, Handle:hndl, const String:error[], any:Datapack)
+
+{
+	if(hndl == INVALID_HANDLE)
+	{
+		LogError("[RankMe] Query Fail: %s", error);
+		PrintToServer(error);
+		return;
+	}
+	
+	ResetPack(Datapack);
+	new i;
+	new client = ReadPackCell(Datapack);
+	if(client == 0 || !IsClientInGame(client))
+		return;
+		
+	new weapon = ReadPackCell(Datapack);
+	new at = ReadPackCell(Datapack);
+	if(!SQL_HasResultSet(hndl)){
+		ShowTOP(client,at-10);
+	}
+	new String:name[256];
+	new String:temp[500];
+	
+	new Handle:menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle:MenuStyle_Radio),MenuHandler_TopWeapon);
+	
+	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,total_players);
+	SetMenuTitle(menu,"");
+	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
+	{
+		i++;
+		SQL_FetchString(hndl,2,name,sizeof(name));
+		Format(temp,sizeof(temp),"%s%d - %s (%d) - %T: %d\n",temp,i+at,name,SQL_FetchInt(hndl,4),"Kills",client,SQL_FetchInt(hndl,16+weapon));
+	} 
+	Format(temp,sizeof(temp),"%s\n ",temp);
+	AddMenuItem(menu,temp,temp);
+	
+	
+	Format(temp,sizeof(temp),"%d;%d",weapon,at+10);
+	new String:temp1[20];
+	Format(temp1,sizeof(temp1),"%T","Next",client);
+	if(i>9)
+		AddMenuItem(menu,temp,temp1);
+	Format(temp,sizeof(temp),"%d;%d",weapon,at-10);
+	Format(temp1,sizeof(temp1),"%T","Back",client);
+	if(at+i-1 >9)
+		AddMenuItem(menu,temp,temp1);
+	
+	DisplayMenuAtItem(menu,client,at,MENU_TIME_FOREVER);
+}
+
+public MenuHandler_TopWeapon(Handle:menu, MenuAction:action, param1, param2){
+	
+	if (action == MenuAction_Select)
+	{
+		new String:temp[250];
+	
+		GetMenuItem(menu, param2, temp, sizeof(temp));
+		
+		new String:v[2][5];
+		ExplodeString(temp,";",v,2,5);
+		if(StringToInt(v[1]) >= 0){
+			ShowTOPWeapon(param1,StringToInt(v[0]),StringToInt(v[1])+1);
+		}
+	}
+	if (action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+}
+
 public Action:CMD_Top(client,args){
 	if(!g_enabled) 
 		return Plugin_Continue;
@@ -325,6 +462,117 @@ public MenuHandler_TopKnife(Handle:menu, MenuAction:action, param1, param2){
 		GetMenuItem(menu, param2, temp, sizeof(temp));
 		if(StringToInt(temp) >= 0){
 			ShowTOPKnife(param1,StringToInt(temp)+1);
+		}
+	}
+	if (action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+}
+
+public Action:CMD_TopNade(client,args){
+	if(!g_enabled) 
+		return Plugin_Continue;
+	if(client == 0 || !IsClientInGame(client))
+		return Plugin_Handled;
+
+	new String:arg1[5];
+	GetCmdArg(1,arg1,sizeof(arg1));
+	if(!StrEqual(arg1,"") && StringToInt(arg1) != 0){
+		ShowTOPNade(client,StringToInt(arg1));
+	}	else {
+		ShowTOPNade(client,0);
+	}
+	return Plugin_Handled;
+}
+
+ShowTOPNade(client,at){
+	if(client == 0 || !IsClientInGame(client))
+		return;
+	new Handle:Datapack= CreateDataPack();
+	
+	WritePackCell(Datapack,client);
+	
+	if(at>0){
+		WritePackCell(Datapack,at-1);
+		
+	}	else {
+		WritePackCell(Datapack,0);
+		
+	}
+	new String:query[200];
+	if(g_rankbots && g_show_bots_on_rank)
+		Format(query,sizeof(query),"SELECT name,score,hegrenade+flashbang+smokegrenade as nadekill FROM rankme where kills >= '%d' ORDER BY nadekill DESC LIMIT %i, 10",g_minimal_kills,at-1);
+	else
+		Format(query,sizeof(query),"SELECT name,score,hegrenade+flashbang+smokegrenade as nadekill FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY nadekill DESC LIMIT %i, 10",g_minimal_kills,at-1);
+		
+	SQL_TQuery(stats_db,SQL_TopNadeCallback,query,Datapack);
+
+}
+public SQL_TopNadeCallback(Handle:owner, Handle:hndl, const String:error[], any:Datapack)
+
+{
+	if(hndl == INVALID_HANDLE)
+	{
+		LogError("[RankMe] Query Fail: %s", error);
+		PrintToServer(error);
+		return;
+	}
+	ResetPack(Datapack);
+	new i;
+	new client = ReadPackCell(Datapack);
+	if(client == 0 || !IsClientInGame(client))
+		return;
+	new at = ReadPackCell(Datapack);
+	if(!SQL_HasResultSet(hndl)){
+		ShowTOP(client,at-10);
+	}
+	new String:name[256];
+	new String:temp[500];
+	
+	new Handle:menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle:MenuStyle_Radio),MenuHandler_TopNade);
+	
+	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,total_players);
+	SetMenuTitle(menu,"");
+	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
+	{
+		
+		i++;
+		
+		SQL_FetchString(hndl,0,name,sizeof(name));
+			
+		
+	
+		Format(temp,sizeof(temp),"%s%d - %s (%d) - %T: %d\n",temp,i+at,name,SQL_FetchInt(hndl,1),"Kills",client,SQL_FetchInt(hndl,2));
+		
+		
+	} 
+	Format(temp,sizeof(temp),"%s\n ",temp);
+	AddMenuItem(menu,temp,temp);
+	
+	
+	IntToString(at+10,temp,sizeof(temp));
+	new String:temp1[20];
+	Format(temp1,sizeof(temp1),"%T","Next",client);
+	if(i>9)
+		AddMenuItem(menu,temp,temp1);
+	IntToString(at-10,temp,sizeof(temp));
+	Format(temp1,sizeof(temp1),"%T","Back",client);
+	if(at+i-1 >9)
+		AddMenuItem(menu,temp,temp1);
+
+	DisplayMenuAtItem(menu,client,at,MENU_TIME_FOREVER);
+}
+
+public MenuHandler_TopNade(Handle:menu, MenuAction:action, param1, param2){
+	
+	if (action == MenuAction_Select)
+	{
+		new String:temp[250];
+	
+		GetMenuItem(menu, param2, temp, sizeof(temp));
+		if(StringToInt(temp) >= 0){
+			ShowTOPNade(param1,StringToInt(temp)+1);
 		}
 	}
 	if (action == MenuAction_End)

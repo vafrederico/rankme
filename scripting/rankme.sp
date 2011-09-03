@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.2.0"
+#define PLUGIN_VERSION "2.3.0"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -259,6 +259,8 @@ public OnPluginStart(){
 	
 	RegConsoleCmd("top",CMD_Top);
 	RegConsoleCmd("topknife",CMD_TopKnife);
+	RegConsoleCmd("topnade",CMD_TopNade);
+	RegConsoleCmd("topweapon",CMD_TopWeapon);
 	
 	RegConsoleCmd("hitboxme",CMD_HitBox);
 	
@@ -654,6 +656,33 @@ public Action:Command_SayChat(client, args)
 		if(g_silenttrigger)
 			return Plugin_Handled;
 	
+	} else if(StrContains(text[startidx],"topnade")  == 0){
+	
+		if(StrContains(text[startidx]," ") != -1)
+		{
+			ClientCommand(client,"%s",text);
+		} else {
+			ClientCommand(client,"topnade %s",text[startidx+3]);
+		}
+		if(g_silenttrigger)
+			return Plugin_Handled;
+	
+	}  else if(StrContains(text[startidx],"topweapon")  == 0){
+		new String:v[3][15];
+		ExplodeString(text[startidx]," ",v,3,15);
+		if(!StrEqual(v[1],"") && GetWeaponNum(v[1]) != 30){
+			if(!StrEqual(v[2],"") && StringToInt(v[2]) > 0)
+			{
+				ShowTOPWeapon(client,StringToInt(v[1]),StringToInt(v[2]));
+			} else {
+				ShowTOPWeapon(client,StringToInt(v[1]),0);
+			}
+		} else {
+			ClientCommand(client,"topweapon");
+		}
+		if(g_silenttrigger)
+			return Plugin_Handled;
+			
 	} else if(StrContains(text[startidx],"top")  == 0){
 	
 		if(StrContains(text[startidx]," ") != -1)

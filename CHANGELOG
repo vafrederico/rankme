@@ -208,3 +208,7 @@
 = V.2.2.0 (08/31/11):
 	 => Features:
 		   = Added FFA mode. Cvar: rankme_ffa (thanks Fearts)
+= V.2.3.0 (09/03/11):
+	 => Features:
+		   = Added topweapon. (thanks gamemann)
+		   = Added topnade. (thanks GrO)
