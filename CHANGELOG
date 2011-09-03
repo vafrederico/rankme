@@ -212,3 +212,6 @@
 	 => Features:
 		   = Added topweapon. (thanks gamemann)
 		   = Added topnade. (thanks GrO)
+= V.2.3.1 (09/03/11):
+	 => Fix:
+		   = Fix topweapon sometimes not showing the correct weapon kills.

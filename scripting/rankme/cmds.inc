@@ -113,9 +113,9 @@ public Action:CMD_TopWeapon(client,args){
 	new String:arg2[5];
 	GetCmdArg(1,arg1,sizeof(arg1));
 	GetCmdArg(2,arg2,sizeof(arg2));
-	if(!StrEqual(arg1,"") && StringToInt(arg2) != 0){
+	if(!StrEqual(arg1,"") && StringToInt(arg2) != 0 && GetWeaponNum(arg1) != 30){
 		ShowTOPWeapon(client,GetWeaponNum(arg1),StringToInt(arg2));
-	}	else if(!StrEqual(arg1,"")){
+	}	else if(!StrEqual(arg1,"") && GetWeaponNum(arg1) != 30){
 		ShowTOPWeapon(client,GetWeaponNum(arg1),0);
 	} else {
 		new Handle:menu = CreateMenu(MenuHandler_TopWeapon_Choose);
