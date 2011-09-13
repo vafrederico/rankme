@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.3.1"
+#define PLUGIN_VERSION "2.4.0"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -58,6 +58,7 @@ new Handle:cvar_points_lose_suicide;
 new Handle:cvar_show_bots_on_rank;
 new Handle:cvar_rankbyname;
 new Handle:cvar_ffa;
+new Handle:cvar_mysql;
 
 new bool:g_enabled;
 new bool:g_rankbyname;
@@ -70,6 +71,7 @@ new bool:g_show_rank_all;
 new bool:g_vip_enabled;
 new bool:g_show_bots_on_rank;
 new bool:g_ffa;
+new bool:g_mysql;
 new g_points_bomb_defused_team;
 new g_points_bomb_defused_player;
 new g_points_bomb_planted_team;
@@ -121,29 +123,6 @@ public Plugin:myinfo = {
 
 public OnPluginStart(){
 
-
-	decl String:error[256];
-	//stats_db = SQL_Connect("storage-local", false, error, sizeof(error));
-
-	if(stats_db == INVALID_HANDLE)
-		stats_db = SQLite_UseDatabase("rankme",error,sizeof(error));
-	if(stats_db == INVALID_HANDLE)
-	{
-		LogError("[RankMe] Nao foi possivel conectar ao banco de dados (%s)", error);
-		return;
-	}
-	
-	SQL_LockDatabase(stats_db);
-	SQL_FastQuery(stats_db,sql_criar);
-	SQL_FastQuery(stats_db,"ALTER TABLE rankme ADD COLUMN vip_killed NUMERIC");
-	SQL_FastQuery(stats_db,"ALTER TABLE rankme ADD COLUMN vip_escaped NUMERIC");
-	SQL_FastQuery(stats_db,"ALTER TABLE rankme ADD COLUMN vip_played NUMERIC");
-	SQL_UnlockDatabase(stats_db);
-	
-	if(DEBUGGING){
-		PrintToServer(sql_criar);
-		LogError("%s",sql_criar);
-	}
 	
 	cvar_enabled = CreateConVar("rankme_enabled","1","Is RankMe enabled? 1 = true 0 = false",_,true,0.0,true,1.0);
 	cvar_rankbots = CreateConVar("rankme_rankbots","0","Rank bots? 1 = true 0 = false",_,true,0.0,true,1.0);
@@ -185,6 +164,8 @@ public OnPluginStart(){
 	cvar_points_lose_suicide = CreateConVar("rankme_points_lose_suicide","0","How many points a player lose for Suiciding?",_,true,0.0);
 	cvar_rankbyname = CreateConVar("rankme_rank_by_name","0","Rank players by name? 1 = true 0 = false",_,true,0.0,true,1.0);
 	cvar_ffa = CreateConVar("rankme_ffa","0","FFA mode? 1 = true 0 = false",_,true,0.0,true,1.0);
+	cvar_mysql = CreateConVar("rankme_mysql","0","Using MySQL? 1 = true 0 = false (SQLite)",_,true,0.0,true,1.0);
+	
 	AutoExecConfig(true,"rankme");
 	
 	HookConVarChange(cvar_enabled,OnConVarChanged);
@@ -227,12 +208,8 @@ public OnPluginStart(){
 	HookConVarChange(cvar_points_lose_suicide,OnConVarChanged);
 	HookConVarChange(cvar_rankbyname,OnConVarChanged);
 	HookConVarChange(cvar_ffa,OnConVarChanged);
-	for(new i=1;i<=MaxClients;i++){
-		if(IsClientInGame(i))
-			OnClientPutInServer(i);
-	}
-	
-	
+	HookConVarChange(cvar_mysql,OnConVarChanged_MySQL);
+		
 	LoadTranslations("rankme.phrases");
 	
 	HookEvent("player_death",	EventPlayerDeath);
@@ -281,15 +258,123 @@ public OnPluginStart(){
 	
 	new Handle:version = CreateConVar("rankme_version",PLUGIN_VERSION,"RankMe Version",FCVAR_PLUGIN|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	SetConVarString(version,PLUGIN_VERSION,true,true);
-	DumpDB();
+	
+	
+}
+public OnConVarChanged_MySQL(Handle:convar, const String:oldValue[], const String:newValue[]){
+	DB_Connect(false);
+}
+
+public DB_Connect(bool:firstload){
+	
+	if(g_mysql != GetConVarBool(cvar_mysql) || firstload){
+		g_mysql = GetConVarBool(cvar_mysql);
+		if(g_mysql){
+			decl String:error[256];
+			
+			stats_db = SQL_Connect("rankme", false, error, sizeof(error));
+
+			if(stats_db == INVALID_HANDLE)
+			{
+				LogError("[RankMe] Nao foi possivel conectar ao banco de dados (%s)", error);
+				return;
+			}
+			
+			SQL_LockDatabase(stats_db);
+			SQL_FastQuery(stats_db,sql_criar);
+			SQL_FastQuery(stats_db,"ALTER TABLE rankme ADD COLUMN vip_killed NUMERIC");
+			SQL_FastQuery(stats_db,"ALTER TABLE rankme ADD COLUMN vip_escaped NUMERIC");
+			SQL_FastQuery(stats_db,"ALTER TABLE rankme ADD COLUMN vip_played NUMERIC");
+			SQL_UnlockDatabase(stats_db);
+		} else {
+			decl String:error[256];
+			//stats_db = SQL_Connect("storage-local", false, error, sizeof(error));
+
+			stats_db = SQLite_UseDatabase("rankme",error,sizeof(error));
+			if(stats_db == INVALID_HANDLE)
+			{
+				LogError("[RankMe] Nao foi possivel conectar ao banco de dados (%s)", error);
+				return;
+			}
+			
+			SQL_LockDatabase(stats_db);
+			SQL_FastQuery(stats_db,sql_criar);
+			SQL_FastQuery(stats_db,"ALTER TABLE rankme ADD COLUMN vip_killed NUMERIC");
+			SQL_FastQuery(stats_db,"ALTER TABLE rankme ADD COLUMN vip_escaped NUMERIC");
+			SQL_FastQuery(stats_db,"ALTER TABLE rankme ADD COLUMN vip_played NUMERIC");
+			SQL_UnlockDatabase(stats_db);
+			
+		}
+		for(new i=1;i<=MaxClients;i++){
+			if(IsClientInGame(i))
+				OnClientPutInServer(i);
+		}
+	}
+
+}
+public OnConfigsExecuted(){
+	if(stats_db == INVALID_HANDLE)
+		DB_Connect(true);
+	else
+		DB_Connect(false);
+	new autopurge = GetConVarInt(cvar_autopurge);
+	if(autopurge > 0){
+		new deletebefore = GetTime() - (autopurge*86400);
+		new String:query[100];
+		Format(query,sizeof(query),"DELETE FROM rankme WHERE lastconnect < '%d'",deletebefore);
+		SQL_TQuery(stats_db,SQL_PurgeCallback,query);
+	}
+	
+	g_show_bots_on_rank = GetConVarBool(cvar_show_bots_on_rank);
+	g_rankbyname = GetConVarBool(cvar_rankbyname);
+	g_enabled = GetConVarBool(cvar_enabled);
+	g_chatchange = GetConVarBool(cvar_chatchange);
+	g_show_rank_all = GetConVarBool(cvar_show_rank_all);
+	g_rankbots = GetConVarBool(cvar_rankbots);
+	g_silenttrigger = GetConVarBool(cvar_silenttrigger);
+	g_ffa = GetConVarBool(cvar_ffa);
+	g_points_bomb_defused_team = GetConVarInt(cvar_points_bomb_defused_team);
+	g_points_bomb_defused_player = GetConVarInt(cvar_points_bomb_defused_player);
+	g_points_bomb_planted_team = GetConVarInt(cvar_points_bomb_planted_team);
+	g_points_bomb_planted_player = GetConVarInt(cvar_points_bomb_planted_player);
+	g_points_bomb_explode_team = GetConVarInt(cvar_points_bomb_explode_team);
+	g_points_bomb_explode_player = GetConVarInt(cvar_points_bomb_explode_player);
+	g_points_hostage_resc_team = GetConVarInt(cvar_points_hostage_resc_team);
+	g_points_hostage_resc_player = GetConVarInt(cvar_points_hostage_resc_player);
+	g_points_hs = GetConVarInt(cvar_points_hs);
+	g_points_kill[CT] = GetConVarInt(cvar_points_kill_ct);
+	g_points_kill[TR] = GetConVarInt(cvar_points_kill_tr);
+	g_points_kill_bonus[CT] = GetConVarInt(cvar_points_kill_bonus_ct);
+	g_points_kill_bonus[TR] = GetConVarInt(cvar_points_kill_bonus_tr);
+	g_points_kill_bonus_dif[CT] = GetConVarInt(cvar_points_kill_bonus_dif_ct);
+	g_points_kill_bonus_dif[TR] = GetConVarInt(cvar_points_kill_bonus_dif_tr);
+	g_points_start = GetConVarInt(cvar_points_start);
+	g_points_knife_multiplier = GetConVarFloat(cvar_points_knife_multiplier);
+	g_points_round_win[TR] = GetConVarInt(cvar_points_tr_round_win);
+	g_points_round_win[CT] = GetConVarInt(cvar_points_ct_round_win);
+	g_minimal_kills = GetConVarInt(cvar_minimal_kills);
+	g_percent_points_lose = GetConVarFloat(cvar_percent_points_lose);
+	g_points_lose_round_ceil = GetConVarBool(cvar_points_lose_round_ceil);
+	g_minimumplayers = GetConVarInt(cvar_minimumplayers);
+	g_resetownrank = GetConVarBool(cvar_resetownrank);
+	g_points_vip_escaped_team = GetConVarInt(cvar_points_vip_escaped_team);
+	g_points_vip_escaped_player = GetConVarInt(cvar_points_vip_escaped_player);
+	g_points_vip_killed_team = GetConVarInt(cvar_points_vip_killed_team);
+	g_points_vip_killed_player = GetConVarInt(cvar_points_vip_killed_player);
+	g_vip_enabled = GetConVarBool(cvar_vip_enabled);
+	g_points_lose_tk = GetConVarInt(cvar_points_lose_tk);
+	g_points_lose_suicide = GetConVarInt(cvar_points_lose_suicide);
+	new String:query[500];
+	if(g_rankbots)
+		Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d'",g_minimal_kills);
+	else
+		Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d' AND steam <> 'BOT'",g_minimal_kills);
+	SQL_TQuery(stats_db,SQL_GetPlayersCallback,query);
 	
 }
 
 public Action:CMD_ManiImport(client,args){
 	new String:file[PLATFORM_MAX_PATH];
-	//INSERT INTO pessoa (id, nome, sexo, datanascimento, cpf)
-
-  // SELECT 227,'FULANDO DE TAL','F','1999-09-09', '999.999.999-9' WHERE NOT EXISTS (SELECT 1 FROM pessoa WHERE id = 227);
 	BuildPath(Path_SM, file, sizeof(file), "../../cfg/mani_admin_plugin/data/mani_ranks.txt");
 	new Handle:hFile = OpenFile(file,"r");
 	new String:buffer[600];
@@ -507,61 +592,6 @@ public Native_GetHitbox(Handle:plugin, numParams)
 	SetNativeArray(2,array,8);
 }
 
-public OnConfigsExecuted(){
-	new autopurge = GetConVarInt(cvar_autopurge);
-	if(autopurge > 0){
-		new deletebefore = GetTime() - (autopurge*86400);
-		new String:query[100];
-		Format(query,sizeof(query),"DELETE FROM rankme WHERE lastconnect < '%d'",deletebefore);
-		SQL_TQuery(stats_db,SQL_PurgeCallback,query);
-	}
-	
-	g_show_bots_on_rank = GetConVarBool(cvar_show_bots_on_rank);
-	g_rankbyname = GetConVarBool(cvar_rankbyname);
-	g_enabled = GetConVarBool(cvar_enabled);
-	g_chatchange = GetConVarBool(cvar_chatchange);
-	g_show_rank_all = GetConVarBool(cvar_show_rank_all);
-	g_rankbots = GetConVarBool(cvar_rankbots);
-	g_silenttrigger = GetConVarBool(cvar_silenttrigger);
-	g_ffa = GetConVarBool(cvar_ffa);
-	g_points_bomb_defused_team = GetConVarInt(cvar_points_bomb_defused_team);
-	g_points_bomb_defused_player = GetConVarInt(cvar_points_bomb_defused_player);
-	g_points_bomb_planted_team = GetConVarInt(cvar_points_bomb_planted_team);
-	g_points_bomb_planted_player = GetConVarInt(cvar_points_bomb_planted_player);
-	g_points_bomb_explode_team = GetConVarInt(cvar_points_bomb_explode_team);
-	g_points_bomb_explode_player = GetConVarInt(cvar_points_bomb_explode_player);
-	g_points_hostage_resc_team = GetConVarInt(cvar_points_hostage_resc_team);
-	g_points_hostage_resc_player = GetConVarInt(cvar_points_hostage_resc_player);
-	g_points_hs = GetConVarInt(cvar_points_hs);
-	g_points_kill[CT] = GetConVarInt(cvar_points_kill_ct);
-	g_points_kill[TR] = GetConVarInt(cvar_points_kill_tr);
-	g_points_kill_bonus[CT] = GetConVarInt(cvar_points_kill_bonus_ct);
-	g_points_kill_bonus[TR] = GetConVarInt(cvar_points_kill_bonus_tr);
-	g_points_kill_bonus_dif[CT] = GetConVarInt(cvar_points_kill_bonus_dif_ct);
-	g_points_kill_bonus_dif[TR] = GetConVarInt(cvar_points_kill_bonus_dif_tr);
-	g_points_start = GetConVarInt(cvar_points_start);
-	g_points_knife_multiplier = GetConVarFloat(cvar_points_knife_multiplier);
-	g_points_round_win[TR] = GetConVarInt(cvar_points_tr_round_win);
-	g_points_round_win[CT] = GetConVarInt(cvar_points_ct_round_win);
-	g_minimal_kills = GetConVarInt(cvar_minimal_kills);
-	g_percent_points_lose = GetConVarFloat(cvar_percent_points_lose);
-	g_points_lose_round_ceil = GetConVarBool(cvar_points_lose_round_ceil);
-	g_minimumplayers = GetConVarInt(cvar_minimumplayers);
-	g_resetownrank = GetConVarBool(cvar_resetownrank);
-	g_points_vip_escaped_team = GetConVarInt(cvar_points_vip_escaped_team);
-	g_points_vip_escaped_player = GetConVarInt(cvar_points_vip_escaped_player);
-	g_points_vip_killed_team = GetConVarInt(cvar_points_vip_killed_team);
-	g_points_vip_killed_player = GetConVarInt(cvar_points_vip_killed_player);
-	g_vip_enabled = GetConVarBool(cvar_vip_enabled);
-	g_points_lose_tk = GetConVarInt(cvar_points_lose_tk);
-	g_points_lose_suicide = GetConVarInt(cvar_points_lose_suicide);
-	new String:query[500];
-	if(g_rankbots)
-		Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d'",g_minimal_kills);
-	else
-		Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d' AND steam <> 'BOT'",g_minimal_kills);
-	SQL_TQuery(stats_db,SQL_GetPlayersCallback,query);
-}
 
 public DumpDB(){
 	SQL_TQuery(stats_db,SQL_DumpCallback,"SELECT * from rankme");
@@ -1353,8 +1383,9 @@ public SQL_DumpCallback(Handle:owner, Handle:hndl, const String:error[], any:Dat
 		first=true;
 		for(new i = 0;i<=fields-1;i++){
 			SQL_FetchString(hndl,i,field,sizeof(field));
-			ReplaceString(field,sizeof(field),"\"","\\\"",false);
 			ReplaceString(field,sizeof(field),"\\","\\\\",false);
+			ReplaceString(field,sizeof(field),"\"","\\\"",false);
+			
 			if(first){
 				Format(fields_values,sizeof(fields_values),"\"%s\"",field);
 				first=false;

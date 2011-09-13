@@ -215,3 +215,8 @@
 = V.2.3.1 (09/03/11):
 	 => Fix:
 		   = Fix topweapon sometimes not showing the correct weapon kills.
+= V.2.4.0 (09/13/11):
+	 => Fix:
+		   = Fixed wrong order of replaces on database dump.
+	 => Feature:
+		   = Added support for MySQL databases. (thanks Lord_Rofl)
