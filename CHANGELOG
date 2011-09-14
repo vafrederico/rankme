@@ -220,3 +220,6 @@
 		   = Fixed wrong order of replaces on database dump.
 	 => Feature:
 		   = Added support for MySQL databases. (thanks Lord_Rofl)
+= V.2.4.1 (09/14/11):
+	 => Fix:
+		   = Fixed a query causing problem if running in MySQL. Field wasn't set to autoincrement. (thanks Lord_Rofl)

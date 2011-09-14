@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.4.0"
+#define PLUGIN_VERSION "2.4.1"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -8,7 +8,7 @@
 #define TR 2
 #define CT 3
 
-new String:sql_criar[] = "CREATE TABLE IF NOT EXISTS rankme (id INTEGER PRIMARY KEY, steam TEXT, name TEXT, lastip TEXT, score NUMERIC, kills NUMERIC, deaths NUMERIC, suicides NUMERIC, tk NUMERIC, shots NUMERIC, hits NUMERIC, headshots NUMERIC, connected NUMERIC, rounds_tr NUMERIC, rounds_ct NUMERIC, lastconnect NUMERIC,knife NUMERIC,glock NUMERIC,usp NUMERIC,p228 NUMERIC,deagle NUMERIC,elite NUMERIC,fiveseven NUMERIC,m3 NUMERIC,xm1014 NUMERIC,mac10 NUMERIC,tmp NUMERIC,mp5navy NUMERIC,ump45 NUMERIC,p90 NUMERIC,galil NUMERIC,ak47 NUMERIC,sg550 NUMERIC,famas NUMERIC,m4a1 NUMERIC,aug NUMERIC,scout NUMERIC,sg552 NUMERIC,awp NUMERIC,g3sg1 NUMERIC,m249 NUMERIC,hegrenade NUMERIC,flashbang NUMERIC,smokegrenade NUMERIC, head NUMERIC, chest NUMERIC, stomach NUMERIC, left_arm NUMERIC, right_arm NUMERIC, left_leg NUMERIC, right_leg NUMERIC,c4_planted NUMERIC,c4_exploded NUMERIC,c4_defused NUMERIC,ct_win NUMERIC, tr_win NUMERIC, hostages_rescued NUMERIC, vip_killed NUMERIC, vip_escaped NUMERIC, vip_played NUMERIC);";
+new String:sql_criar[] = "CREATE TABLE IF NOT EXISTS rankme (id INTEGER PRIMARY KEY, steam TEXT, name TEXT, lastip TEXT, score NUMERIC, kills NUMERIC, deaths NUMERIC, suicides NUMERIC, tk NUMERIC, shots NUMERIC, hits NUMERIC, headshots NUMERIC, connected NUMERIC, rounds_tr NUMERIC, rounds_ct NUMERIC, lastconnect NUMERIC,knife NUMERIC,glock NUMERIC,usp NUMERIC,p228 NUMERIC,deagle NUMERIC,elite NUMERIC,fiveseven NUMERIC,m3 NUMERIC,xm1014 NUMERIC,mac10 NUMERIC,tmp NUMERIC,mp5navy NUMERIC,ump45 NUMERIC,p90 NUMERIC,galil NUMERIC,ak47 NUMERIC,sg550 NUMERIC,famas NUMERIC,m4a1 NUMERIC,aug NUMERIC,scout NUMERIC,sg552 NUMERIC,awp NUMERIC,g3sg1 NUMERIC,m249 NUMERIC,hegrenade NUMERIC,flashbang NUMERIC,smokegrenade NUMERIC, head NUMERIC, chest NUMERIC, stomach NUMERIC, left_arm NUMERIC, right_arm NUMERIC, left_leg NUMERIC, right_leg NUMERIC,c4_planted NUMERIC,c4_exploded NUMERIC,c4_defused NUMERIC,ct_win NUMERIC, tr_win NUMERIC, hostages_rescued NUMERIC, vip_killed NUMERIC, vip_escaped NUMERIC, vip_played NUMERIC)";
 new String:sql_iniciar[] = "INSERT INTO rankme VALUES (NULL,'%s','%s','%s','%d','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0');";
 new String:sql_salvar[] = "UPDATE rankme SET score = '%i', kills = '%i', deaths='%i',suicides='%i',tk='%i',shots='%i',hits='%i',headshots='%i', rounds_tr = '%i', rounds_ct = '%i',lastip='%s',name='%s'%s,head='%i',chest='%i', stomach='%i',left_arm='%i',right_arm='%i',left_leg='%i',right_leg='%i',c4_planted='%i',c4_exploded='%i',c4_defused='%i',ct_win='%i',tr_win='%i', hostages_rescued='%i',vip_killed = '%d',vip_escaped = '%d',vip_played = '%d' WHERE steam = '%s';";
 new String:sql_salvar_name[] = "UPDATE rankme SET score = '%i', kills = '%i', deaths='%i',suicides='%i',tk='%i',shots='%i',hits='%i',headshots='%i', rounds_tr = '%i', rounds_ct = '%i',lastip='%s',name='%s'%s,head='%i',chest='%i', stomach='%i',left_arm='%i',right_arm='%i',left_leg='%i',right_leg='%i',c4_planted='%i',c4_exploded='%i',c4_defused='%i',ct_win='%i',tr_win='%i', hostages_rescued='%i',vip_killed = '%d',vip_escaped = '%d',vip_played = '%d' WHERE name = '%s';";
@@ -280,12 +280,7 @@ public DB_Connect(bool:firstload){
 				return;
 			}
 			
-			SQL_LockDatabase(stats_db);
-			SQL_FastQuery(stats_db,sql_criar);
-			SQL_FastQuery(stats_db,"ALTER TABLE rankme ADD COLUMN vip_killed NUMERIC");
-			SQL_FastQuery(stats_db,"ALTER TABLE rankme ADD COLUMN vip_escaped NUMERIC");
-			SQL_FastQuery(stats_db,"ALTER TABLE rankme ADD COLUMN vip_played NUMERIC");
-			SQL_UnlockDatabase(stats_db);
+			
 		} else {
 			decl String:error[256];
 			//stats_db = SQL_Connect("storage-local", false, error, sizeof(error));
@@ -297,14 +292,15 @@ public DB_Connect(bool:firstload){
 				return;
 			}
 			
-			SQL_LockDatabase(stats_db);
-			SQL_FastQuery(stats_db,sql_criar);
-			SQL_FastQuery(stats_db,"ALTER TABLE rankme ADD COLUMN vip_killed NUMERIC");
-			SQL_FastQuery(stats_db,"ALTER TABLE rankme ADD COLUMN vip_escaped NUMERIC");
-			SQL_FastQuery(stats_db,"ALTER TABLE rankme ADD COLUMN vip_played NUMERIC");
-			SQL_UnlockDatabase(stats_db);
-			
 		}
+		SQL_LockDatabase(stats_db);
+		SQL_FastQuery(stats_db,sql_criar);
+		SQL_FastQuery(stats_db,"ALTER TABLE rankme MODIFY id INTEGER AUTO_INCREMENT");
+		SQL_FastQuery(stats_db,"ALTER TABLE rankme ADD COLUMN vip_killed NUMERIC");
+		SQL_FastQuery(stats_db,"ALTER TABLE rankme ADD COLUMN vip_escaped NUMERIC");
+		SQL_FastQuery(stats_db,"ALTER TABLE rankme ADD COLUMN vip_played NUMERIC");
+		SQL_UnlockDatabase(stats_db);
+		
 		for(new i=1;i<=MaxClients;i++){
 			if(IsClientInGame(i))
 				OnClientPutInServer(i);
