@@ -223,3 +223,10 @@
 = V.2.4.1 (09/14/11):
 	 => Fix:
 		   = Fixed a query causing problem if running in MySQL. Field wasn't set to autoincrement. (thanks Lord_Rofl)
+= V.2.4.2 (09/17/11):
+	 => Fix:
+		   = Fixed/Updated DE translation. (thanks Lord_Rofl)
+		   = Fixed an error that would occur if a cvar was changed before the connection with the DB was estabilished. (thanks GrO)
+		   = Now it will unload the plugin if can't connect to the Database.
+	 => Features:
+		   = Added LT translation. (thanks hleV)

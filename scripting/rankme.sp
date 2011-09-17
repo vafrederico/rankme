@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.4.1"
+#define PLUGIN_VERSION "2.4.2"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -269,29 +269,15 @@ public DB_Connect(bool:firstload){
 	
 	if(g_mysql != GetConVarBool(cvar_mysql) || firstload){
 		g_mysql = GetConVarBool(cvar_mysql);
+		decl String:error[256];
 		if(g_mysql){
-			decl String:error[256];
-			
 			stats_db = SQL_Connect("rankme", false, error, sizeof(error));
-
-			if(stats_db == INVALID_HANDLE)
-			{
-				LogError("[RankMe] Nao foi possivel conectar ao banco de dados (%s)", error);
-				return;
-			}
-			
-			
 		} else {
-			decl String:error[256];
-			//stats_db = SQL_Connect("storage-local", false, error, sizeof(error));
-
 			stats_db = SQLite_UseDatabase("rankme",error,sizeof(error));
-			if(stats_db == INVALID_HANDLE)
-			{
-				LogError("[RankMe] Nao foi possivel conectar ao banco de dados (%s)", error);
-				return;
-			}
-			
+		}
+		if(stats_db == INVALID_HANDLE)
+		{
+			SetFailState("[RankMe] Unable to connect to the database (%s)",error);
 		}
 		SQL_LockDatabase(stats_db);
 		SQL_FastQuery(stats_db,sql_criar);
@@ -1434,11 +1420,13 @@ public OnConVarChanged(Handle:convar, const String:oldValue[], const String:newV
 	g_points_vip_killed_player = GetConVarInt(cvar_points_vip_killed_player);
 	g_vip_enabled = GetConVarBool(cvar_vip_enabled);
 	
-	new String:query[500];
-	if(g_rankbots)
-		Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d'",g_minimal_kills);
-	else
-		Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d' AND steam <> 'BOT'",g_minimal_kills);
-	SQL_TQuery(stats_db,SQL_GetPlayersCallback,query);
+	if(convar == cvar_rankbots && stats_db != INVALID_HANDLE){
+		new String:query[500];
+		if(g_rankbots)
+			Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d'",g_minimal_kills);
+		else
+			Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d' AND steam <> 'BOT'",g_minimal_kills);
+		SQL_TQuery(stats_db,SQL_GetPlayersCallback,query);
+	}
 }
 
