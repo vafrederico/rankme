@@ -230,3 +230,7 @@
 		   = Now it will unload the plugin if can't connect to the Database.
 	 => Features:
 		   = Added LT translation. (thanks hleV)
+= V.2.4.4 (09/19/11):
+	 => Fix:
+		   = Fixed Native RankMe_GetRank passing wrong rank values if not using bots at the rank or ranking by name.
+		   = Fixed an error that would occur if a player joined the server before the connection with the DB was estabilished. (thanks GrO)

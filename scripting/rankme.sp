@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.4.2"
+#define PLUGIN_VERSION "2.4.4"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -483,7 +483,11 @@ public Native_GetRank(Handle:plugin, numParams)
 	WritePackCell(pack, _:plugin);
 	
 	new String:query[500];
-	Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d' ORDER BY score DESC",g_minimal_kills);
+	if(g_rankbots && g_show_bots_on_rank)
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC",g_minimal_kills);
+	else
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC",g_minimal_kills);
+	
 	SQL_TQuery(stats_db, SQL_GetRankCallback, query, pack);
 }
 
@@ -1246,7 +1250,8 @@ public OnClientPutInServer(client){
 		PrintToServer(query);
 		LogError("%s",query);
 	}
-	SQL_TQuery(stats_db,SQL_LoadPlayerCallback,query,client);
+	if(stats_db != INVALID_HANDLE)
+		SQL_TQuery(stats_db,SQL_LoadPlayerCallback,query,client);
 }
 
 public SQL_LoadPlayerCallback(Handle:owner, Handle:hndl, const String:error[], any:client)
