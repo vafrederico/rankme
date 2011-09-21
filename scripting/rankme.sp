@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.4.4"
+#define PLUGIN_VERSION "2.4.5"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -16,6 +16,8 @@ new String:sql_connects[] = "UPDATE rankme SET lastconnect='%i', connected='%i' 
 new String:sql_connects_name[] = "UPDATE rankme SET lastconnect='%i', connected='%i' WHERE name = '%s';";
 new String:sql_retrieveclient[] = "SELECT * FROM rankme WHERE steam='%s';";
 new String:sql_retrieveclient_name[] = "SELECT * FROM rankme WHERE name='%s';";
+new String:sql_removeduplicate[] = "delete from rankme where rankme.id > (SELECT min(id) from rankme as t2 WHERE t2.steam=rankme.steam);";
+new String:sql_removeduplicate_name[] = "delete from rankme where rankme.id > (SELECT min(id) from rankme as t2 WHERE t2.name=rankme.name);";
 new String:weapons_names[28][] = {"knife","glock","usp","p228","deagle","elite","fiveseven","m3","xm1014","mac10","tmp","mp5navy","ump45","p90","galil","ak47","sg550","famas","m4a1","aug","scout","sg552","awp","g3sg1","m249","hegrenade","flashbang","smokegrenade"};
 new String:weapons_names1[28][] = {"Knife"," 9x19 mm Sidearm (Glock)","KM .45 Tactical (USP)","228 Compact","Knighthawk .50C (Desert Eagle)",".40 Dual Elites","ES Five-Seven","Leone 12 Gauge Super","Leone YG1265 Auto Shotgun","Ingram MAC-10","Schmidt Machine Pistol (TMP)","KM Submachine Gun (MP5)","KM UMP45","ES C90 (P90)","IDF Defender","CV-47 (AK-47)","Kreig 550 Commando (SG550)","Clarion 5.56","Maverick M4A1 Carbine (Colt)","Bullpup (AUG)","Schmidt Scout","Kreig 552","Magnum Sniper Rifle (AWP)","D3/AU-1 (G3)","M249","HE Grenade","Flashbang","Smoke Grenade"};
 new Handle:cvar_enabled;
@@ -244,6 +246,7 @@ public OnPluginStart(){
 	RegConsoleCmd("weaponme",CMD_WeaponMe);
 	
 	RegAdminCmd("resetrank",CMD_ResetRank,ADMFLAG_ROOT);
+	RegAdminCmd("rankme_remove_duplicate",CMD_Duplicate,ADMFLAG_ROOT);
 	RegAdminCmd("rankpurge",CMD_Purge,ADMFLAG_ROOT);
 	RegAdminCmd("resetrank_all",CMD_ResetRankAll,ADMFLAG_ROOT);
 	RegAdminCmd("rankme_import_mani",CMD_ManiImport,ADMFLAG_ROOT);
@@ -352,6 +355,29 @@ public OnConfigsExecuted(){
 	else
 		Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d' AND steam <> 'BOT'",g_minimal_kills);
 	SQL_TQuery(stats_db,SQL_GetPlayersCallback,query);
+	
+}
+public Action:CMD_Duplicate(client,args){
+	if(!g_rankbyname)
+		SQL_TQuery(stats_db,SQL_DuplicateCallback,sql_removeduplicate);
+	else
+		SQL_TQuery(stats_db,SQL_DuplicateCallback,sql_removeduplicate_name);
+	
+}
+
+public SQL_DuplicateCallback(Handle:owner, Handle:hndl, const String:error[], any:client)
+{
+	if(hndl == INVALID_HANDLE)
+	{
+		LogError("[RankMe] Query Fail: %s", error);
+		return;
+	}
+	
+	PrintToServer("[RankMe]: %d duplicated rows removed",SQL_GetAffectedRows(owner));
+	if(client != 0){
+		PrintToChat(client,"[RankMe]: %d duplicated rows removed",SQL_GetAffectedRows(owner));
+	}
+	//LogAction(-1,-1,"[RankMe]: %d players purged by inactivity",SQL_GetAffectedRows(owner));
 	
 }
 

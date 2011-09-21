@@ -234,3 +234,6 @@
 	 => Fix:
 		   = Fixed Native RankMe_GetRank passing wrong rank values if not using bots at the rank or ranking by name.
 		   = Fixed an error that would occur if a player joined the server before the connection with the DB was estabilished. (thanks GrO)
+= V.2.4.5 (09/20/11):
+	 => Features:
+		   = Added rankme_remove_duplicate command for removing duplicated rows, that shouldn't exists anyway. (thanks banania)
