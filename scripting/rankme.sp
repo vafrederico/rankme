@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.5.0"
+#define PLUGIN_VERSION "2.5.1"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -7,6 +7,12 @@
 #define SPEC 1
 #define TR 2
 #define CT 3
+
+#define SENDER_WORLD					0
+#define MAXLENGTH_INPUT			128 	// Inclues \0 and is the size of the chat input box.
+#define MAXLENGTH_NAME				64		// This is backwords math to get compability.  Sourcemod has it set at 32, but there is room for more.
+#define MAXLENGTH_MESSAGE		256		// This is based upon the SDK and the length of the entire message, including tags, name, : etc.
+
 
 new String:sql_criar[] = "CREATE TABLE IF NOT EXISTS rankme (id INTEGER PRIMARY KEY, steam TEXT, name TEXT, lastip TEXT, score NUMERIC, kills NUMERIC, deaths NUMERIC, suicides NUMERIC, tk NUMERIC, shots NUMERIC, hits NUMERIC, headshots NUMERIC, connected NUMERIC, rounds_tr NUMERIC, rounds_ct NUMERIC, lastconnect NUMERIC,knife NUMERIC,glock NUMERIC,usp NUMERIC,p228 NUMERIC,deagle NUMERIC,elite NUMERIC,fiveseven NUMERIC,m3 NUMERIC,xm1014 NUMERIC,mac10 NUMERIC,tmp NUMERIC,mp5navy NUMERIC,ump45 NUMERIC,p90 NUMERIC,galil NUMERIC,ak47 NUMERIC,sg550 NUMERIC,famas NUMERIC,m4a1 NUMERIC,aug NUMERIC,scout NUMERIC,sg552 NUMERIC,awp NUMERIC,g3sg1 NUMERIC,m249 NUMERIC,hegrenade NUMERIC,flashbang NUMERIC,smokegrenade NUMERIC, head NUMERIC, chest NUMERIC, stomach NUMERIC, left_arm NUMERIC, right_arm NUMERIC, left_leg NUMERIC, right_leg NUMERIC,c4_planted NUMERIC,c4_exploded NUMERIC,c4_defused NUMERIC,ct_win NUMERIC, tr_win NUMERIC, hostages_rescued NUMERIC, vip_killed NUMERIC, vip_escaped NUMERIC, vip_played NUMERIC)";
 new String:sql_iniciar[] = "INSERT INTO rankme VALUES (NULL,'%s','%s','%s','%d','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0');";
@@ -215,6 +221,7 @@ public OnPluginStart(){
 		
 	// LOAD TRANSLATIONS
 	LoadTranslations("rankme.phrases");
+	LoadTranslations("scp.cstrike.phrases"); // How is printed the messages. Used for SayText2 hook.
 	
 	// EVENTS
 	HookEvent("player_death",	EventPlayerDeath);
@@ -666,14 +673,17 @@ public Action:OnClientChangeName(Handle:event, const String:name[], bool:dontBro
 	return Plugin_Continue;
 }
 
-
+// TAKEN FROM SIMPLE-CHAT PROCESSOR (BLOCK THE ORIGINAL MESSAGE, FOR PROCESSING IT LATER0
 public Action:OnSayText2(UserMsg:msg_id, Handle:bf, const clients[], numClients, bool:reliable, bool:init)
 {
 	if(!g_enabled) 
 		return Plugin_Continue;
-	// Gets the Sender
-	new Sender = BfReadByte(bf);
-	if (Sender == 0) // Ignore if sent by console
+	/**
+	Get the sender of the usermessage and bug out if it is not a player
+	*/
+	
+	new cpSender = BfReadByte(bf);
+	if (cpSender == SENDER_WORLD)
 	{
 		return Plugin_Continue;
 	}
@@ -682,74 +692,218 @@ public Action:OnSayText2(UserMsg:msg_id, Handle:bf, const clients[], numClients,
 	Get the chat bool.  This determines if sent to console as well as chat
 	*/
 	new bool:bChat = bool:BfReadByte(bf);
-	if(bChat){
-		
-		new String:buffer[128];
-		BfReadString(bf, buffer, sizeof(buffer)); // Skip Translation Name
-		BfReadString(bf, buffer, sizeof(buffer)); // Skip Sender Name
-		
-		if (BfGetNumBytesLeft(bf)) // Get the message
-		{
-			BfReadString(bf, buffer, sizeof(buffer));
-		}
-		
-		if(strcmp(buffer,"rank",false)==0){
-			CMD_Rank(Sender,0);
-		}
-		else if (strcmp(buffer,"statsme",false)==0){
-			CMD_StatsMe(Sender,0);
-		}
-			
-		else if (strcmp(buffer,"hitboxme",false)==0){
-			CMD_HitBox(Sender,0);
-		}
-		else if (strcmp(buffer,"weaponme",false)==0){
-			CMD_WeaponMe(Sender,0);
-		} else if (strcmp(buffer,"session",false)==0){
-			CMD_Session(Sender,0);
-			
-		} else if( strcmp(buffer,"next",false)==0) {
-			CMD_Next(Sender,0);
-		} else if(StrContains(buffer,"topknife")  == 0){
-			if(strcmp(buffer,"topknife") == 0)
-			{
-				ShowTOPKnife(Sender,0);
-			} else {
-				ShowTOPKnife(Sender,StringToInt(buffer[8]));
-			}
-		} else if(StrContains(buffer,"topnade")  == 0){
-			if(strcmp(buffer,"topnade") == 0)
-			{
-				ShowTOPNade(Sender,0);
-			} else {
-				ShowTOPNade(Sender,StringToInt(buffer[7]));
-			}
-		}  else if(StrContains(buffer,"topweapon")  == 0){
-			if(strcmp(buffer,"topweapon") == 0)
-			{
-				CreateTimer(0.001,Timer_TopWeaponMenu,Sender); // Build the menu on the next frame
-			} else {
-				new String:pieces[3][40];
-				ExplodeString(buffer," ",pieces,3,40);
-				if(GetWeaponNum(pieces[1]) == 30)
-					CreateTimer(0.001,Timer_TopWeaponMenu,Sender); // Build the menu on the next frame
-				else
-					ShowTOPWeapon(Sender,GetWeaponNum(pieces[1]),StringToInt(pieces[2]));
-			}
-		} else if(StrContains(buffer,"top")  == 0){
-			if(strcmp(buffer,"top") == 0)
-			{
-				ShowTOP(Sender,0);
-			} else {
-				ShowTOP(Sender,StringToInt(buffer[3]));
-			}
-		}
-		if(g_silenttrigger)
-			return Plugin_Handled;
+	
+	/**
+	Make sure we have a default translation string for the message
+	This also determines the message type...
+	*/
+	decl String:cpTranslationName[32];
+	
+	BfReadString(bf, cpTranslationName, sizeof(cpTranslationName));
+	
+	/**
+	Get the senders name
+	*/
+	decl String:cpSender_Name[MAXLENGTH_NAME];
+	if (BfGetNumBytesLeft(bf))
+	{
+		BfReadString(bf, cpSender_Name, sizeof(cpSender_Name));
 	}
 	
-	return Plugin_Continue;
+	/**
+	Get the message
+	*/
+	decl String:cpMessage[MAXLENGTH_INPUT];
+	if (BfGetNumBytesLeft(bf))
+	{
+		BfReadString(bf, cpMessage, sizeof(cpMessage));
+	}
+	
+	/**
+	Store the clients in an array so the call can manipulate it.
+	*/
+	new Handle:cpRecipients = CreateArray(1, 1);
+	for (new i = 0; i < numClients; i++)
+	{
+		PushArrayCell(cpRecipients, clients[i]);
+	}
+	
+	/**
+	Because the message could be changed but not the name
+	we need to compare the original name to the returned name.
+	We do this because we may have to add the team color code to the name,
+	where as the message doesn't get a color code by default.
+	*/
+	decl String:sOriginalName[MAXLENGTH_NAME];
+	strcopy(sOriginalName, sizeof(sOriginalName), cpSender_Name);
+	
+
+	/**
+	This is the check for a name change.  If it has not changed we add the team color code
+	*/
+	if (StrEqual(sOriginalName, cpSender_Name))
+	{
+		Format(cpSender_Name, sizeof(cpSender_Name), "\x03%s", cpSender_Name);
+	}
+	
+	/**
+	Create a timer to print the message on the next gameframe
+	*/
+	new Handle:cpPack = CreateDataPack();
+	new numRecipients = GetArraySize(cpRecipients);
+	
+	WritePackCell(cpPack, cpSender);
+
+	for (new i = 0; i < numRecipients; i++)
+	{
+		new x = GetArrayCell(cpRecipients, i);
+		if (!IsValidClient(x))
+		{
+			numRecipients--;
+			RemoveFromArray(cpRecipients, i);
+		}
+	}
+	
+	WritePackCell(cpPack, numRecipients);
+	
+	for (new i = 0; i < numRecipients; i++)
+	{
+		new x = GetArrayCell(cpRecipients, i);
+		WritePackCell(cpPack, x);
+	}
+		
+	WritePackCell(cpPack, bChat);
+	WritePackString(cpPack, cpTranslationName);
+	WritePackString(cpPack, cpSender_Name);
+	WritePackString(cpPack, cpMessage);	
+	CreateTimer(0.001, ResendMessage, cpPack, TIMER_FLAG_NO_MAPCHANGE);
+	
+	CloseHandle(cpRecipients);
+	return Plugin_Handled;
 }
+
+// PROCCESS THE CHAT TRIGGERS
+public bool:ProccesChatTrigger(Sender,String:buffer[]){
+	new bool:bFoundTrigger;
+	if(strcmp(buffer,"rank",false)==0){
+		bFoundTrigger = true;
+		CMD_Rank(Sender,0);
+	}
+	else if (strcmp(buffer,"statsme",false)==0){
+		bFoundTrigger = true;
+		CMD_StatsMe(Sender,0);
+	}
+		
+	else if (strcmp(buffer,"hitboxme",false)==0){
+		bFoundTrigger = true;
+		CreateTimer(0.001,Timer_HitBox,Sender); // Build the menu on the next frame
+	}
+	else if (strcmp(buffer,"weaponme",false)==0){
+		bFoundTrigger = true;
+		CreateTimer(0.001,Timer_WeaponMe,Sender); // Build the menu on the next frame
+	} else if (strcmp(buffer,"session",false)==0){
+		bFoundTrigger = true;
+		CreateTimer(0.001,Timer_Session,Sender); // Build the menu on the next frame
+	} else if( strcmp(buffer,"next",false)==0) {
+		bFoundTrigger = true;
+		CMD_Next(Sender,0);
+	} else if(StrContains(buffer,"topknife")  == 0){
+		bFoundTrigger = true;
+		if(strcmp(buffer,"topknife") == 0)
+		{
+			ShowTOPKnife(Sender,0);
+		} else {
+			ShowTOPKnife(Sender,StringToInt(buffer[8]));
+		}
+	} else if(StrContains(buffer,"topnade")  == 0){
+		bFoundTrigger = true;
+		if(strcmp(buffer,"topnade") == 0)
+		{
+			ShowTOPNade(Sender,0);
+		} else {
+			ShowTOPNade(Sender,StringToInt(buffer[7]));
+		}
+	}  else if(StrContains(buffer,"topweapon")  == 0){
+		bFoundTrigger = true;
+		if(strcmp(buffer,"topweapon") == 0)
+		{
+			CreateTimer(0.001,Timer_TopWeaponMenu,Sender); // Build the menu on the next frame
+		} else {
+			new String:pieces[3][40];
+			ExplodeString(buffer," ",pieces,3,40);
+			if(GetWeaponNum(pieces[1]) == 30)
+				CreateTimer(0.001,Timer_TopWeaponMenu,Sender); // Build the menu on the next frame
+			else
+				ShowTOPWeapon(Sender,GetWeaponNum(pieces[1]),StringToInt(pieces[2]));
+		}
+	} else if(StrContains(buffer,"top")  == 0){
+		bFoundTrigger = true;
+		if(strcmp(buffer,"top") == 0)
+		{
+			ShowTOP(Sender,0);
+		} else {
+			ShowTOP(Sender,StringToInt(buffer[3]));
+		}
+	}
+	return bFoundTrigger;
+}
+
+new bool:bProcessedChatTrigger; // Bool to check if the message has already been proccessed
+public Action:ResendMessage(Handle:timer, any:pack)
+{
+	ResetPack(pack);
+	new client = ReadPackCell(pack);
+	new numClients = ReadPackCell(pack);
+	new clients[numClients];
+
+	for (new i = 0; i < numClients; i++)
+	{
+		clients[i] = ReadPackCell(pack);
+	}
+	
+	new bool:bChat = bool:ReadPackCell(pack);
+	decl String:sChatType[32];
+	decl String:sSenderName[64];
+	decl String:sMessage[128];
+	ReadPackString(pack, sChatType, sizeof(sChatType));
+	ReadPackString(pack, sSenderName, sizeof(sSenderName));
+	ReadPackString(pack, sMessage, sizeof(sMessage));
+	
+	decl String:sTranslation[256];
+	Format(sTranslation, sizeof(sTranslation), "%t",sChatType, sSenderName, sMessage);
+	if(!bProcessedChatTrigger){ // check if the message has already been proccessed
+		bProcessedChatTrigger = true; // Set processed
+		if(ProccesChatTrigger(client,sMessage) && g_silenttrigger)  // proccess the message and block it if silent triggers
+			return Plugin_Stop;
+	}	
+	if(client == clients[numClients-1]) // Last time called from that message
+		bProcessedChatTrigger = false;
+	
+	new Handle:bf = StartMessage("SayText2", clients, numClients, USERMSG_RELIABLE|USERMSG_BLOCKHOOKS); // Resends the message, now not being hooked
+	BfWriteByte(bf, client);
+	BfWriteByte(bf, bChat);
+	BfWriteString(bf, sTranslation);
+	EndMessage();
+	
+	CloseHandle(pack);
+	return Plugin_Stop;
+}
+
+public Action:Timer_HitBox(Handle:timer,any:client){
+	if(IsClientConnected(client))
+		CMD_HitBox(client,0);
+}
+
+public Action:Timer_WeaponMe(Handle:timer,any:client){
+	if(IsClientConnected(client))
+		CMD_WeaponMe(client,0);
+}
+
+public Action:Timer_Session(Handle:timer,any:client){
+	if(IsClientConnected(client))
+		CMD_Session(client,0);
+}
+
 public Action:Timer_TopWeaponMenu(Handle:timer,any:client){
 	if(IsClientConnected(client))
 		CMD_TopWeapon(client,0);
@@ -1554,3 +1708,11 @@ public OnConVarChanged(Handle:convar, const String:oldValue[], const String:newV
 	}
 }
 
+stock bool:IsValidClient(client, bool:nobots = true) 
+{  
+	if (client <= 0 || client > MaxClients || !IsClientConnected(client) || (nobots && IsFakeClient(client))) 
+	{  
+			return false;  
+	}  
+	return IsClientInGame(client);  
+}

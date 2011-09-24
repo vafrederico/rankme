@@ -237,7 +237,7 @@
 = V.2.4.5 (09/20/11):
 	 => Features:
 		   = Added rankme_remove_duplicate command for removing duplicated rows, that shouldn't exists anyway. (thanks banania)
-= V.2.5.0 (09/??/11):
+= V.2.5.0 (09/23/11):
 	 => Features:
 		   = Added KO translation. (thanks Blowst)
 	 => Fix:
@@ -245,3 +245,6 @@
 	 => Changes:
 		   = Changed the way of getting the chat triggers. (thanks Antithasys)
 		   = Changed the way of getting the cvar changes. (thanks Antithasys)
+= V.2.5.1 (09/24/11):
+	 => Fix:
+		   = Fixed chat not showing up when cvar rankme_silenttriggers was 1. (thanks GrO)

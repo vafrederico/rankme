@@ -1,6 +1,5 @@
 // FROM SMLIB
-stock Array_FindHighestValue(any:array[], size, start=0)
-{
+stock Array_FindHighestValue(any:array[], size, start=0){
 	if (start < 0) {
 		start = 0;
 	}
@@ -94,6 +93,7 @@ public Action:CMD_Purge(client,args){
 	ReplyToCommand(client,"[RankMe]: Purged");
 	return Plugin_Handled;
 }
+
 public SQL_GetPlayersCallback(Handle:owner, Handle:hndl, const String:error[], any:Datapack){
 	if(hndl == INVALID_HANDLE)
 	{
@@ -103,6 +103,7 @@ public SQL_GetPlayersCallback(Handle:owner, Handle:hndl, const String:error[], a
 	}
 	total_players =SQL_GetRowCount(hndl);
 }
+
 public Action:CMD_TopWeapon(client,args){
 	if(!g_enabled) 
 		return Plugin_Continue;
@@ -128,6 +129,7 @@ public Action:CMD_TopWeapon(client,args){
 	}
 	return Plugin_Handled;
 }
+
 public MenuHandler_TopWeapon_Choose(Handle:menu, MenuAction:action, param1, param2){
 	
 	if (action == MenuAction_Select)
@@ -144,6 +146,7 @@ public MenuHandler_TopWeapon_Choose(Handle:menu, MenuAction:action, param1, para
 		CloseHandle(menu);
 	}
 }
+
 ShowTOPWeapon(client,weapon,at){
 	if(client == 0 || !IsClientInGame(client))
 		return;
@@ -168,10 +171,7 @@ ShowTOPWeapon(client,weapon,at){
 
 }
 
-
-public SQL_TopWeaponCallback(Handle:owner, Handle:hndl, const String:error[], any:Datapack)
-
-{
+public SQL_TopWeaponCallback(Handle:owner, Handle:hndl, const String:error[], any:Datapack){
 	if(hndl == INVALID_HANDLE)
 	{
 		LogError("[RankMe] Query Fail: %s", error);
@@ -282,9 +282,8 @@ ShowTOP(client,at){
 	SQL_TQuery(stats_db,SQL_TopCallback,query,Datapack);
 
 }
-public SQL_TopCallback(Handle:owner, Handle:hndl, const String:error[], any:Datapack)
 
-{
+public SQL_TopCallback(Handle:owner, Handle:hndl, const String:error[], any:Datapack){
 	if(hndl == INVALID_HANDLE)
 	{
 		LogError("[RankMe] Query Fail: %s", error);
@@ -403,9 +402,8 @@ ShowTOPKnife(client,at){
 	SQL_TQuery(stats_db,SQL_TopKnifeCallback,query,Datapack);
 
 }
-public SQL_TopKnifeCallback(Handle:owner, Handle:hndl, const String:error[], any:Datapack)
 
-{
+public SQL_TopKnifeCallback(Handle:owner, Handle:hndl, const String:error[], any:Datapack){
 	if(hndl == INVALID_HANDLE)
 	{
 		LogError("[RankMe] Query Fail: %s", error);
@@ -515,9 +513,8 @@ ShowTOPNade(client,at){
 	SQL_TQuery(stats_db,SQL_TopNadeCallback,query,Datapack);
 
 }
-public SQL_TopNadeCallback(Handle:owner, Handle:hndl, const String:error[], any:Datapack)
 
-{
+public SQL_TopNadeCallback(Handle:owner, Handle:hndl, const String:error[], any:Datapack){
 	if(hndl == INVALID_HANDLE)
 	{
 		LogError("[RankMe] Query Fail: %s", error);
@@ -587,6 +584,7 @@ public MenuHandler_TopNade(Handle:menu, MenuAction:action, param1, param2){
 		CloseHandle(menu);
 	}
 }
+
 public MenuHandler_DoNothing(Handle:menu, MenuAction:action, param1, param2){
 	if (action == MenuAction_End)
 	{
@@ -614,10 +612,7 @@ public Action:CMD_Rank(client,args){
 	return Plugin_Handled;
 }
 
-
-public SQL_RankCallback(Handle:owner, Handle:hndl, const String:error[], any:client)
-
-{
+public SQL_RankCallback(Handle:owner, Handle:hndl, const String:error[], any:client){
 	if(hndl == INVALID_HANDLE)
 	{
 		LogError("[RankMe] Query Fail: %s", error);
@@ -657,6 +652,7 @@ public SQL_RankCallback(Handle:owner, Handle:hndl, const String:error[], any:cli
 		}
 	} 
 }
+
 public Action:CMD_Session(client,args){
 	if(!g_enabled) 
 		return Plugin_Continue;
@@ -781,6 +777,7 @@ public Action:CMD_HitBox(client,args){
 	
 	return Plugin_Handled;
 }
+
 public Action:CMD_WeaponMe(client,args){
 	if(!g_enabled) 
 		return Plugin_Continue;
@@ -854,10 +851,7 @@ public Action:CMD_StatsMe(client,args){
 	
 }
 
-
-public SQL_StatsMeCallback(Handle:owner, Handle:hndl, const String:error[], any:client)
-
-{
+public SQL_StatsMeCallback(Handle:owner, Handle:hndl, const String:error[], any:client){
 	if(hndl == INVALID_HANDLE)
 	{
 		LogError("[RankMe] Query Fail: %s", error);
@@ -959,6 +953,7 @@ public SQL_StatsMeCallback(Handle:owner, Handle:hndl, const String:error[], any:
 		}
 	}
 }
+
 public PanelNoHandle(Handle:menu, MenuAction:action, param1, param2){
 
 	
@@ -979,10 +974,7 @@ public Action:CMD_Next(client,args){
 	return Plugin_Handled;
 }
 
-
-public SQL_NextCallback(Handle:owner, Handle:hndl, const String:error[], any:client)
-
-{
+public SQL_NextCallback(Handle:owner, Handle:hndl, const String:error[], any:client){
 	if(hndl == INVALID_HANDLE)
 	{
 		LogError("[RankMe] Query Fail: %s", error);
@@ -1082,11 +1074,11 @@ public Action:CMD_ResetOwnRank(client,args){
 }
 
 public Float:IntToFloat(integer){
-	
 	new String:s[300];
 	IntToString(integer,s,sizeof(s));
 	return StringToFloat(s);
 }
+
 public FloatToInt(Float:ifloat){
 	new String:s[300];
 	FloatToString(ifloat,s,sizeof(s));
