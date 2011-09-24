@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.4.5"
+#define PLUGIN_VERSION "2.5.0"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -121,11 +121,10 @@ public Plugin:myinfo = {
 	version = PLUGIN_VERSION,
 	url = ""
 };
-// Body Parts
 
 public OnPluginStart(){
 
-	
+	// CREATE CVARS
 	cvar_enabled = CreateConVar("rankme_enabled","1","Is RankMe enabled? 1 = true 0 = false",_,true,0.0,true,1.0);
 	cvar_rankbots = CreateConVar("rankme_rankbots","0","Rank bots? 1 = true 0 = false",_,true,0.0,true,1.0);
 	cvar_silenttrigger = CreateConVar("rankme_silenttriggers","0","Silent triggers? 1 = true 0 = false",_,true,0.0,true,1.0);
@@ -168,8 +167,10 @@ public OnPluginStart(){
 	cvar_ffa = CreateConVar("rankme_ffa","0","FFA mode? 1 = true 0 = false",_,true,0.0,true,1.0);
 	cvar_mysql = CreateConVar("rankme_mysql","0","Using MySQL? 1 = true 0 = false (SQLite)",_,true,0.0,true,1.0);
 	
+	// LOAD RANKME.CFG
 	AutoExecConfig(true,"rankme");
 	
+	// CVAR HOOK
 	HookConVarChange(cvar_enabled,OnConVarChanged);
 	HookConVarChange(cvar_chatchange,OnConVarChanged);
 	HookConVarChange(cvar_show_bots_on_rank,OnConVarChanged);
@@ -212,57 +213,61 @@ public OnPluginStart(){
 	HookConVarChange(cvar_ffa,OnConVarChanged);
 	HookConVarChange(cvar_mysql,OnConVarChanged_MySQL);
 		
+	// LOAD TRANSLATIONS
 	LoadTranslations("rankme.phrases");
 	
+	// EVENTS
 	HookEvent("player_death",	EventPlayerDeath);
 	HookEvent("player_spawn",	EventPlayerSpawn);
 	HookEvent("player_hurt",	EventPlayerHurt);
 	HookEvent("weapon_fire", EventWeaponFire);
-	
 	HookEvent( "bomb_planted", Event_BombPlanted );
 	HookEvent( "bomb_defused", Event_BombDefused );
 	HookEvent( "bomb_exploded", Event_BombExploded );
-	
 	HookEvent( "hostage_rescued", Event_HostageRescued );
-	
 	HookEvent( "vip_killed", Event_VipKilled );
 	HookEvent( "vip_escaped", Event_VipEscaped );
-	
 	HookEvent("round_end", Event_RoundEnd);
-
 	HookEvent("player_changename", OnClientChangeName, EventHookMode_Pre);
-	// SESSION
-	RegConsoleCmd("session",CMD_Session);
 	
-	RegConsoleCmd("rank",CMD_Rank);
-	
-	RegConsoleCmd("top",CMD_Top);
-	RegConsoleCmd("topknife",CMD_TopKnife);
-	RegConsoleCmd("topnade",CMD_TopNade);
-	RegConsoleCmd("topweapon",CMD_TopWeapon);
-	
-	RegConsoleCmd("hitboxme",CMD_HitBox);
-	
-	RegConsoleCmd("weaponme",CMD_WeaponMe);
-	
+	// ADMNIN COMMANDS
 	RegAdminCmd("resetrank",CMD_ResetRank,ADMFLAG_ROOT);
 	RegAdminCmd("rankme_remove_duplicate",CMD_Duplicate,ADMFLAG_ROOT);
 	RegAdminCmd("rankpurge",CMD_Purge,ADMFLAG_ROOT);
 	RegAdminCmd("resetrank_all",CMD_ResetRankAll,ADMFLAG_ROOT);
 	RegAdminCmd("rankme_import_mani",CMD_ManiImport,ADMFLAG_ROOT);
+	
+	// PLAYER COMMANDS
+	RegConsoleCmd("session",CMD_Session);
+	RegConsoleCmd("rank",CMD_Rank);
+	RegConsoleCmd("top",CMD_Top);
+	RegConsoleCmd("topknife",CMD_TopKnife);
+	RegConsoleCmd("topnade",CMD_TopNade);
+	RegConsoleCmd("topweapon",CMD_TopWeapon);
+	RegConsoleCmd("hitboxme",CMD_HitBox);
+	RegConsoleCmd("weaponme",CMD_WeaponMe);
 	RegConsoleCmd("resetmyrank",CMD_ResetOwnRank);
-	
 	RegConsoleCmd("statsme",CMD_StatsMe);
-
 	RegConsoleCmd("sm_next",CMD_Next);
-	
-	RegConsoleCmd("say", Command_SayChat);
-	RegConsoleCmd("say_team", Command_SayChat);
+
+	//	Hook the usermessage for chat triggers
+	new UserMsg:umSayText2 = GetUserMessageId("SayText2");
+	if (umSayText2 != INVALID_MESSAGE_ID)
+	{
+		HookUserMessage(umSayText2, OnSayText2, true);
+	}
+	else
+	{
+		LogError("[RankMe] Error hooking usermessage saytext2.  Plugin disabled.");
+		SetFailState("Error hooking usermessage saytext2");	
+	}
 	
 	new Handle:version = CreateConVar("rankme_version",PLUGIN_VERSION,"RankMe Version",FCVAR_PLUGIN|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
-	SetConVarString(version,PLUGIN_VERSION,true,true);
-	
-	
+	// UPDATE THE CVAR IF NEEDED
+	new String:version_on_cvar[10];
+	GetConVarString(version,version_on_cvar,sizeof(version_on_cvar));
+	if(!StrEqual(PLUGIN_VERSION,version_on_cvar))
+		SetConVarString(version,PLUGIN_VERSION,true,true);
 }
 public OnConVarChanged_MySQL(Handle:convar, const String:oldValue[], const String:newValue[]){
 	DB_Connect(false);
@@ -270,7 +275,7 @@ public OnConVarChanged_MySQL(Handle:convar, const String:oldValue[], const Strin
 
 public DB_Connect(bool:firstload){
 	
-	if(g_mysql != GetConVarBool(cvar_mysql) || firstload){
+	if(g_mysql != GetConVarBool(cvar_mysql) || firstload){ // NEEDS TO CONNECT IF CHANGED MYSQL CVAR OR NEVER CONNECTED
 		g_mysql = GetConVarBool(cvar_mysql);
 		decl String:error[256];
 		if(g_mysql){
@@ -661,79 +666,94 @@ public Action:OnClientChangeName(Handle:event, const String:name[], bool:dontBro
 	return Plugin_Continue;
 }
 
-public Action:Command_SayChat(client, args)
-{	
+
+public Action:OnSayText2(UserMsg:msg_id, Handle:bf, const clients[], numClients, bool:reliable, bool:init)
+{
 	if(!g_enabled) 
 		return Plugin_Continue;
-	decl String:text[192];
-	if (!GetCmdArgString(text, sizeof(text)) || client == 0)
+	// Gets the Sender
+	new Sender = BfReadByte(bf);
+	if (Sender == 0) // Ignore if sent by console
 	{
 		return Plugin_Continue;
 	}
 	
-	new startidx = 0;
-	if(text[strlen(text)-1] == '"')
-	{
-		text[strlen(text)-1] = '\0';
-		startidx = 1;
+	/**
+	Get the chat bool.  This determines if sent to console as well as chat
+	*/
+	new bool:bChat = bool:BfReadByte(bf);
+	if(bChat){
+		
+		new String:buffer[128];
+		BfReadString(bf, buffer, sizeof(buffer)); // Skip Translation Name
+		BfReadString(bf, buffer, sizeof(buffer)); // Skip Sender Name
+		
+		if (BfGetNumBytesLeft(bf)) // Get the message
+		{
+			BfReadString(bf, buffer, sizeof(buffer));
+		}
+		
+		if(strcmp(buffer,"rank",false)==0){
+			CMD_Rank(Sender,0);
+		}
+		else if (strcmp(buffer,"statsme",false)==0){
+			CMD_StatsMe(Sender,0);
+		}
+			
+		else if (strcmp(buffer,"hitboxme",false)==0){
+			CMD_HitBox(Sender,0);
+		}
+		else if (strcmp(buffer,"weaponme",false)==0){
+			CMD_WeaponMe(Sender,0);
+		} else if (strcmp(buffer,"session",false)==0){
+			CMD_Session(Sender,0);
+			
+		} else if( strcmp(buffer,"next",false)==0) {
+			CMD_Next(Sender,0);
+		} else if(StrContains(buffer,"topknife")  == 0){
+			if(strcmp(buffer,"topknife") == 0)
+			{
+				ShowTOPKnife(Sender,0);
+			} else {
+				ShowTOPKnife(Sender,StringToInt(buffer[8]));
+			}
+		} else if(StrContains(buffer,"topnade")  == 0){
+			if(strcmp(buffer,"topnade") == 0)
+			{
+				ShowTOPNade(Sender,0);
+			} else {
+				ShowTOPNade(Sender,StringToInt(buffer[7]));
+			}
+		}  else if(StrContains(buffer,"topweapon")  == 0){
+			if(strcmp(buffer,"topweapon") == 0)
+			{
+				CreateTimer(0.001,Timer_TopWeaponMenu,Sender); // Build the menu on the next frame
+			} else {
+				new String:pieces[3][40];
+				ExplodeString(buffer," ",pieces,3,40);
+				if(GetWeaponNum(pieces[1]) == 30)
+					CreateTimer(0.001,Timer_TopWeaponMenu,Sender); // Build the menu on the next frame
+				else
+					ShowTOPWeapon(Sender,GetWeaponNum(pieces[1]),StringToInt(pieces[2]));
+			}
+		} else if(StrContains(buffer,"top")  == 0){
+			if(strcmp(buffer,"top") == 0)
+			{
+				ShowTOP(Sender,0);
+			} else {
+				ShowTOP(Sender,StringToInt(buffer[3]));
+			}
+		}
+		if(g_silenttrigger)
+			return Plugin_Handled;
 	}
 	
-	if(strcmp(text[startidx],"rank",false)==0 || strcmp(text[startidx],"statsme",false)==0 || strcmp(text[startidx],"hitboxme",false)==0 || strcmp(text[startidx],"weaponme",false)==0 || strcmp(text[startidx],"session",false)==0){
-		ClientCommand(client,"%s",text);
-		if(g_silenttrigger)
-			return Plugin_Handled;
-	} else if( strcmp(text[startidx],"next",false)==0) {
-		CMD_Next(client,args);
-		if(g_silenttrigger)
-			return Plugin_Handled;
-			
-	} else if(StrContains(text[startidx],"topknife")  == 0){
-	
-		if(StrContains(text[startidx]," ") != -1)
-		{
-			ClientCommand(client,"%s",text);
-		} else {
-			ClientCommand(client,"topknife %s",text[startidx+3]);
-		}
-		if(g_silenttrigger)
-			return Plugin_Handled;
-	
-	} else if(StrContains(text[startidx],"topnade")  == 0){
-	
-		if(StrContains(text[startidx]," ") != -1)
-		{
-			ClientCommand(client,"%s",text);
-		} else {
-			ClientCommand(client,"topnade %s",text[startidx+3]);
-		}
-		if(g_silenttrigger)
-			return Plugin_Handled;
-	
-	}  else if(StrContains(text[startidx],"topweapon")  == 0){
-		if(StrContains(text[startidx]," ") != -1)
-		{
-			ClientCommand(client,"%s",text);
-		} else {
-			ClientCommand(client,"topweapon %s",text[startidx+3]);
-		}
-		if(g_silenttrigger)
-			return Plugin_Handled;
-			
-	} else if(StrContains(text[startidx],"top")  == 0){
-	
-		if(StrContains(text[startidx]," ") != -1)
-		{
-			ClientCommand(client,"%s",text);
-		} else {
-			ClientCommand(client,"top %s",text[startidx+3]);
-		}
-		if(g_silenttrigger)
-			return Plugin_Handled;
-	}
-	
-	return Plugin_Continue;	
+	return Plugin_Continue;
 }
-
+public Action:Timer_TopWeaponMenu(Handle:timer,any:client){
+	if(IsClientConnected(client))
+		CMD_TopWeapon(client,0);
+}
 public GetCurrentPlayers(){
 	new count;
 	for(new i=1;i<=MaxClients;i++){
@@ -1413,45 +1433,118 @@ public SQL_DumpCallback(Handle:owner, Handle:hndl, const String:error[], any:Dat
 }
 
 public OnConVarChanged(Handle:convar, const String:oldValue[], const String:newValue[]){
-	g_show_bots_on_rank = GetConVarBool(cvar_show_bots_on_rank);
-	g_rankbyname = GetConVarBool(cvar_rankbyname);
-	g_enabled = GetConVarBool(cvar_enabled);
-	g_show_rank_all = GetConVarBool(cvar_show_rank_all);
-	g_chatchange = GetConVarBool(cvar_chatchange);
-	g_rankbots = GetConVarBool(cvar_rankbots);
-	g_ffa = GetConVarBool(cvar_ffa);
-	g_silenttrigger = GetConVarBool(cvar_silenttrigger);
-	g_points_bomb_defused_team = GetConVarInt(cvar_points_bomb_defused_team);
-	g_points_bomb_defused_player = GetConVarInt(cvar_points_bomb_defused_player);
-	g_points_bomb_planted_team = GetConVarInt(cvar_points_bomb_planted_team);
-	g_points_bomb_planted_player = GetConVarInt(cvar_points_bomb_planted_player);
-	g_points_bomb_explode_team = GetConVarInt(cvar_points_bomb_explode_team);
-	g_points_bomb_explode_player = GetConVarInt(cvar_points_bomb_explode_player);
-	g_points_hostage_resc_team = GetConVarInt(cvar_points_hostage_resc_team);
-	g_points_hostage_resc_player = GetConVarInt(cvar_points_hostage_resc_player);
-	g_points_hs = GetConVarInt(cvar_points_hs);
-	g_points_kill[CT] = GetConVarInt(cvar_points_kill_ct);
-	g_points_kill[TR] = GetConVarInt(cvar_points_kill_tr);
-	g_points_kill_bonus[CT] = GetConVarInt(cvar_points_kill_bonus_ct);
-	g_points_kill_bonus[TR] = GetConVarInt(cvar_points_kill_bonus_tr);
-	g_points_kill_bonus_dif[CT] = GetConVarInt(cvar_points_kill_bonus_dif_ct);
-	g_points_kill_bonus_dif[TR] = GetConVarInt(cvar_points_kill_bonus_dif_tr);
-	g_points_start = GetConVarInt(cvar_points_start);
-	g_points_knife_multiplier = GetConVarFloat(cvar_points_knife_multiplier);
-	g_points_round_win[TR] = GetConVarInt(cvar_points_tr_round_win);
-	g_points_round_win[CT] = GetConVarInt(cvar_points_ct_round_win);
-	g_minimal_kills = GetConVarInt(cvar_minimal_kills);
-	g_percent_points_lose = GetConVarFloat(cvar_percent_points_lose);
-	g_points_lose_round_ceil = GetConVarBool(cvar_points_lose_round_ceil);
-	g_minimumplayers = GetConVarInt(cvar_minimumplayers);
-	g_resetownrank = GetConVarBool(cvar_resetownrank);
-	g_points_vip_escaped_team = GetConVarInt(cvar_points_vip_escaped_team);
-	g_points_vip_escaped_player = GetConVarInt(cvar_points_vip_escaped_player);
-	g_points_vip_killed_team = GetConVarInt(cvar_points_vip_killed_team);
-	g_points_vip_killed_player = GetConVarInt(cvar_points_vip_killed_player);
-	g_vip_enabled = GetConVarBool(cvar_vip_enabled);
-	
-	if(convar == cvar_rankbots && stats_db != INVALID_HANDLE){
+	if(convar == cvar_show_bots_on_rank){
+		g_show_bots_on_rank = GetConVarBool(cvar_show_bots_on_rank);
+	}
+	else if (convar == cvar_rankbyname){
+		g_rankbyname = GetConVarBool(cvar_rankbyname);
+	}
+	else if (convar == cvar_enabled){
+		g_enabled = GetConVarBool(cvar_enabled);
+	}
+	else if (convar == cvar_show_rank_all){
+		g_show_rank_all = GetConVarBool(cvar_show_rank_all);
+	}
+	else if (convar == cvar_chatchange){
+		g_chatchange = GetConVarBool(cvar_chatchange);
+	}
+	else if (convar == cvar_rankbots){
+		g_rankbots = GetConVarBool(cvar_rankbots);
+	}
+	else if (convar == cvar_ffa){
+		g_ffa = GetConVarBool(cvar_ffa);
+	}
+	else if (convar == cvar_silenttrigger){
+		g_silenttrigger = GetConVarBool(cvar_silenttrigger);
+	}
+	else if (convar == cvar_points_bomb_defused_team){
+		g_points_bomb_defused_team = GetConVarInt(cvar_points_bomb_defused_team);
+	}
+	else if (convar == cvar_points_bomb_defused_player){
+		g_points_bomb_defused_player = GetConVarInt(cvar_points_bomb_defused_player);
+	}
+	else if (convar == cvar_points_bomb_planted_team){
+		g_points_bomb_planted_team = GetConVarInt(cvar_points_bomb_planted_team);
+	}
+	else if (convar == cvar_points_bomb_planted_player){
+		g_points_bomb_planted_player = GetConVarInt(cvar_points_bomb_planted_player);
+	}
+	else if (convar == cvar_points_bomb_explode_team){
+		g_points_bomb_explode_team = GetConVarInt(cvar_points_bomb_explode_team);
+	}
+	else if (convar == cvar_points_bomb_explode_player){
+		g_points_bomb_explode_player = GetConVarInt(cvar_points_bomb_explode_player);
+	}
+	else if (convar == cvar_points_hostage_resc_team){
+		g_points_hostage_resc_team = GetConVarInt(cvar_points_hostage_resc_team);
+	}
+	else if (convar == cvar_points_hostage_resc_player){
+		g_points_hostage_resc_player = GetConVarInt(cvar_points_hostage_resc_player);
+	}
+	else if (convar == cvar_points_hs){
+		g_points_hs = GetConVarInt(cvar_points_hs);
+	}
+	else if (convar == cvar_points_kill_ct){
+		g_points_kill[CT] = GetConVarInt(cvar_points_kill_ct);
+	}
+	else if (convar == cvar_points_kill_tr){
+		g_points_kill[TR] = GetConVarInt(cvar_points_kill_tr);
+	}
+	else if (convar == cvar_points_kill_bonus_ct){
+		g_points_kill_bonus[CT] = GetConVarInt(cvar_points_kill_bonus_ct);
+	}
+	else if (convar == cvar_points_kill_bonus_tr){
+		g_points_kill_bonus[TR] = GetConVarInt(cvar_points_kill_bonus_tr);
+	}
+	else if (convar == cvar_points_kill_bonus_dif_ct){
+		g_points_kill_bonus_dif[CT] = GetConVarInt(cvar_points_kill_bonus_dif_ct);
+	}
+	else if (convar == cvar_points_kill_bonus_dif_tr){
+		g_points_kill_bonus_dif[TR] = GetConVarInt(cvar_points_kill_bonus_dif_tr);
+	}
+	else if (convar == cvar_points_start){
+		g_points_start = GetConVarInt(cvar_points_start);
+	}
+	else if (convar == cvar_points_knife_multiplier){
+		g_points_knife_multiplier = GetConVarFloat(cvar_points_knife_multiplier);
+	}
+	else if (convar == cvar_points_tr_round_win){
+		g_points_round_win[TR] = GetConVarInt(cvar_points_tr_round_win);
+	}
+	else if (convar == cvar_points_ct_round_win){
+		g_points_round_win[CT] = GetConVarInt(cvar_points_ct_round_win);
+	}
+	else if (convar == cvar_minimal_kills){
+		g_minimal_kills = GetConVarInt(cvar_minimal_kills);
+	}
+	else if (convar == cvar_percent_points_lose){
+		g_percent_points_lose = GetConVarFloat(cvar_percent_points_lose);
+	}
+	else if (convar == cvar_points_lose_round_ceil){
+		g_points_lose_round_ceil = GetConVarBool(cvar_points_lose_round_ceil);
+	}
+	else if (convar == cvar_minimumplayers){
+		g_minimumplayers = GetConVarInt(cvar_minimumplayers);
+	}
+	else if (convar == cvar_resetownrank){
+		g_resetownrank = GetConVarBool(cvar_resetownrank);
+	}
+	else if (convar == cvar_points_vip_escaped_team){
+		g_points_vip_escaped_team = GetConVarInt(cvar_points_vip_escaped_team);
+	}
+	else if (convar == cvar_points_vip_escaped_player){
+		g_points_vip_escaped_player = GetConVarInt(cvar_points_vip_escaped_player);
+	}
+	else if (convar == cvar_points_vip_killed_team){
+		g_points_vip_killed_team = GetConVarInt(cvar_points_vip_killed_team);
+	}
+	else if (convar == cvar_points_vip_killed_player){
+		g_points_vip_killed_player = GetConVarInt(cvar_points_vip_killed_player);
+	}
+	else if (convar == cvar_vip_enabled){
+		g_vip_enabled = GetConVarBool(cvar_vip_enabled);
+	}
+	else if(convar == cvar_rankbots && stats_db != INVALID_HANDLE){
 		new String:query[500];
 		if(g_rankbots)
 			Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d'",g_minimal_kills);

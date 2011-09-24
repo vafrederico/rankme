@@ -108,15 +108,16 @@ public Action:CMD_TopWeapon(client,args){
 		return Plugin_Continue;
 	if(client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
-	
-	new String:arg1[20];
-	new String:arg2[5];
-	GetCmdArg(1,arg1,sizeof(arg1));
-	GetCmdArg(2,arg2,sizeof(arg2));
-	if(!StrEqual(arg1,"") && StringToInt(arg2) != 0 && GetWeaponNum(arg1) != 30){
-		ShowTOPWeapon(client,GetWeaponNum(arg1),StringToInt(arg2));
-	}	else if(!StrEqual(arg1,"") && GetWeaponNum(arg1) != 30){
-		ShowTOPWeapon(client,GetWeaponNum(arg1),0);
+	if(args > 0){
+		new String:arg1[20];
+		new String:arg2[5];
+		GetCmdArg(1,arg1,sizeof(arg1));
+		GetCmdArg(2,arg2,sizeof(arg2));
+		if(!StrEqual(arg1,"") && StringToInt(arg2) != 0 && GetWeaponNum(arg1) != 30){
+			ShowTOPWeapon(client,GetWeaponNum(arg1),StringToInt(arg2));
+		}	else if(!StrEqual(arg1,"") && GetWeaponNum(arg1) != 30){
+			ShowTOPWeapon(client,GetWeaponNum(arg1),0);
+		}
 	} else {
 		new Handle:menu = CreateMenu(MenuHandler_TopWeapon_Choose);
 		SetMenuTitle(menu,"Top Weapon:");
@@ -127,7 +128,6 @@ public Action:CMD_TopWeapon(client,args){
 	}
 	return Plugin_Handled;
 }
-
 public MenuHandler_TopWeapon_Choose(Handle:menu, MenuAction:action, param1, param2){
 	
 	if (action == MenuAction_Select)
@@ -187,8 +187,9 @@ public SQL_TopWeaponCallback(Handle:owner, Handle:hndl, const String:error[], an
 		
 	new weapon = ReadPackCell(Datapack);
 	new at = ReadPackCell(Datapack);
-	if(!SQL_HasResultSet(hndl)){
-		ShowTOPWeapon(client,weapon,at-10);
+	if(!SQL_HasResultSet(hndl) || SQL_GetRowCount(hndl) ==0){
+		ShowTOPWeapon(client,weapon,total_players-9);
+		return;
 	}
 	new String:name[256];
 	new String:temp[500];
@@ -297,8 +298,10 @@ public SQL_TopCallback(Handle:owner, Handle:hndl, const String:error[], any:Data
 	if(client == 0 || !IsClientInGame(client))
 		return;
 	new at = ReadPackCell(Datapack);
-	if(!SQL_HasResultSet(hndl)){
-		ShowTOP(client,at-10);
+	
+	if(!SQL_HasResultSet(hndl) || SQL_GetRowCount(hndl) ==0){
+		ShowTOP(client,total_players-9);
+		return;
 	}
 	new String:name[256];
 	new String:temp[500];
@@ -415,8 +418,9 @@ public SQL_TopKnifeCallback(Handle:owner, Handle:hndl, const String:error[], any
 	if(client == 0 || !IsClientInGame(client))
 		return;
 	new at = ReadPackCell(Datapack);
-	if(!SQL_HasResultSet(hndl)){
-		ShowTOP(client,at-10);
+	if(!SQL_HasResultSet(hndl) || SQL_GetRowCount(hndl) ==0){
+		ShowTOPKnife(client,total_players-9);
+		return;
 	}
 	new String:name[256];
 	new String:temp[500];
@@ -526,8 +530,9 @@ public SQL_TopNadeCallback(Handle:owner, Handle:hndl, const String:error[], any:
 	if(client == 0 || !IsClientInGame(client))
 		return;
 	new at = ReadPackCell(Datapack);
-	if(!SQL_HasResultSet(hndl)){
-		ShowTOP(client,at-10);
+	if(!SQL_HasResultSet(hndl) || SQL_GetRowCount(hndl) ==0){
+		ShowTOPNade(client,total_players-9);
+		return;
 	}
 	new String:name[256];
 	new String:temp[500];

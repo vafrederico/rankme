@@ -237,3 +237,11 @@
 = V.2.4.5 (09/20/11):
 	 => Features:
 		   = Added rankme_remove_duplicate command for removing duplicated rows, that shouldn't exists anyway. (thanks banania)
+= V.2.5.0 (09/??/11):
+	 => Features:
+		   = Added KO translation. (thanks Blowst)
+	 => Fix:
+		   = Fixed TOP's so when used an position value higher than possible, it will show the last page.
+	 => Changes:
+		   = Changed the way of getting the chat triggers. (thanks Antithasys)
+		   = Changed the way of getting the cvar changes. (thanks Antithasys)
