@@ -23,7 +23,7 @@ stock Array_FindHighestValue(any:array[], size, start=0){
 }
 
 public Action:CMD_ResetRank(client,args){
-	if(!g_enabled) 
+	if(!g_bEnabled) 
 		return Plugin_Continue;
 	new String:arg1[64];
 	
@@ -32,12 +32,12 @@ public Action:CMD_ResetRank(client,args){
 	//ReplaceString(arg1,sizeof(arg1)," ","");
 	ReplaceString(arg1,sizeof(arg1),"\"","");
 	new String:query[100];
-	if(g_rankbyname){
+	if(g_bRankByName){
 		Format(query,sizeof(query),"DELETE FROM rankme WHERE name='%s'",arg1);
 	} else {
 		Format(query,sizeof(query),"DELETE FROM rankme WHERE steam='%s'",arg1);
 	}
-	SQL_TQuery(stats_db,SQL_NothingCallback,query);
+	SQL_TQuery(g_hStatsDb,SQL_NothingCallback,query);
 	LogAction(client,-1,"[RankMe]: Reseted rank (%s)",arg1);
 	new String:auth[64];
 	for(new i=1;i<=MaxClients;i++){
@@ -55,10 +55,10 @@ public Action:CMD_ResetRank(client,args){
 }
 
 public Action:CMD_ResetRankAll(client,args){
-	if(!g_enabled) 
+	if(!g_bEnabled) 
 		return Plugin_Continue;
 	
-	SQL_TQuery(stats_db,SQL_NothingCallback,"DELETE FROM rankme WHERE 1=1");
+	SQL_TQuery(g_hStatsDb,SQL_NothingCallback,"DELETE FROM rankme WHERE 1=1");
 	
 	LogAction(client,-1,"[RankMe]: All rank data has been reseted");
 	
@@ -71,7 +71,7 @@ public Action:CMD_ResetRankAll(client,args){
 }
 
 public Action:CMD_Purge(client,args){
-	if(!g_enabled) 
+	if(!g_bEnabled) 
 		return Plugin_Continue;
 	new String:arg1[64];
 	
@@ -88,7 +88,7 @@ public Action:CMD_Purge(client,args){
 	deletebefore = GetTime() - (StringToInt(arg1)*86400);
 	new String:query[100];
 	Format(query,sizeof(query),"DELETE FROM rankme WHERE lastconnect < '%d'",deletebefore);
-	SQL_TQuery(stats_db,SQL_PurgeCallback,query);
+	SQL_TQuery(g_hStatsDb,SQL_PurgeCallback,query);
 	LogAction(client,-1,"[RankMe]: Purged rank (%s days inactivity)",arg1);
 	ReplyToCommand(client,"[RankMe]: Purged");
 	return Plugin_Handled;
@@ -101,11 +101,11 @@ public SQL_GetPlayersCallback(Handle:owner, Handle:hndl, const String:error[], a
 		PrintToServer(error);
 		return;
 	}
-	total_players =SQL_GetRowCount(hndl);
+	g_TotalPlayers =SQL_GetRowCount(hndl);
 }
 
 public Action:CMD_TopWeapon(client,args){
-	if(!g_enabled) 
+	if(!g_bEnabled) 
 		return Plugin_Continue;
 	if(client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
@@ -123,7 +123,7 @@ public Action:CMD_TopWeapon(client,args){
 		new Handle:menu = CreateMenu(MenuHandler_TopWeapon_Choose);
 		SetMenuTitle(menu,"Top Weapon:");
 		for(new i=0;i<=27;i++){
-			AddMenuItem(menu,weapons_names[i],weapons_names1[i]);
+			AddMenuItem(menu,g_sWeaponsNamesGame[i],g_sWeaponsNamesFull[i]);
 		}
 		DisplayMenu(menu,client,MENU_TIME_FOREVER);
 	}
@@ -162,12 +162,12 @@ ShowTOPWeapon(client,weapon,at){
 		
 	}
 	new String:query[200];
-	if(g_rankbots && g_show_bots_on_rank)
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY %s DESC LIMIT %i, 10",g_minimal_kills,weapons_names[weapon],at-1);
+	if(g_bRankBots && g_bShowBotsOnRank)
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY %s DESC LIMIT %i, 10",g_MinimalKills,g_sWeaponsNamesGame[weapon],at-1);
 	else
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY %s DESC LIMIT %i, 10",g_minimal_kills,weapons_names[weapon],at-1);
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY %s DESC LIMIT %i, 10",g_MinimalKills,g_sWeaponsNamesGame[weapon],at-1);
 	
-	SQL_TQuery(stats_db,SQL_TopWeaponCallback,query,Datapack);
+	SQL_TQuery(g_hStatsDb,SQL_TopWeaponCallback,query,Datapack);
 
 }
 
@@ -188,7 +188,7 @@ public SQL_TopWeaponCallback(Handle:owner, Handle:hndl, const String:error[], an
 	new weapon = ReadPackCell(Datapack);
 	new at = ReadPackCell(Datapack);
 	if(!SQL_HasResultSet(hndl) || SQL_GetRowCount(hndl) ==0){
-		ShowTOPWeapon(client,weapon,total_players-9);
+		ShowTOPWeapon(client,weapon,g_TotalPlayers-9);
 		return;
 	}
 	new String:name[256];
@@ -196,13 +196,19 @@ public SQL_TopWeaponCallback(Handle:owner, Handle:hndl, const String:error[], an
 	
 	new Handle:menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle:MenuStyle_Radio),MenuHandler_TopWeapon);
 	
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,total_players);
+	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
 	SetMenuTitle(menu,"");
+	new String:sBuffer[200];
+
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
 	{
 		i++;
 		SQL_FetchString(hndl,2,name,sizeof(name));
-		Format(temp,sizeof(temp),"%s%d - %s (%d) - %T: %d\n",temp,i+at,name,SQL_FetchInt(hndl,4),"Kills",client,SQL_FetchInt(hndl,16+weapon));
+		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %T: %d\n",i+at,name,SQL_FetchInt(hndl,4),"Kills",client,SQL_FetchInt(hndl,16+weapon));
+		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
+			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			sBuffer="\0";
+		}
 	} 
 	Format(temp,sizeof(temp),"%s\n ",temp);
 	new String:temp1[20];
@@ -210,12 +216,12 @@ public SQL_TopWeaponCallback(Handle:owner, Handle:hndl, const String:error[], an
 	AddMenuItem(menu,temp1,temp);
 	
 	
-	Format(temp,sizeof(temp),"%d;%d",weapon,at+10);
+	Format(temp,sizeof(temp),"%d;%d",weapon,at+i);
 	
 	Format(temp1,sizeof(temp1),"%T","Next",client);
 	if(i>9)
 		AddMenuItem(menu,temp,temp1);
-	Format(temp,sizeof(temp),"%d;%d",weapon,at-10);
+	Format(temp,sizeof(temp),"%d;%d",weapon,at-i);
 	Format(temp1,sizeof(temp1),"%T","Back",client);
 	if(at+i-1 >9)
 		AddMenuItem(menu,temp,temp1);
@@ -244,7 +250,7 @@ public MenuHandler_TopWeapon(Handle:menu, MenuAction:action, param1, param2){
 }
 
 public Action:CMD_Top(client,args){
-	if(!g_enabled) 
+	if(!g_bEnabled) 
 		return Plugin_Continue;
 	if(client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
@@ -274,12 +280,12 @@ ShowTOP(client,at){
 		
 	}
 	new String:query[200];
-	if(g_rankbots && g_show_bots_on_rank)
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC LIMIT %i, 10",g_minimal_kills,at-1);
+	if(g_bRankBots && g_bShowBotsOnRank)
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC LIMIT %i, 10",g_MinimalKills,at-1);
 	else
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC LIMIT %i, 10",g_minimal_kills,at-1);
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC LIMIT %i, 10",g_MinimalKills,at-1);
 	
-	SQL_TQuery(stats_db,SQL_TopCallback,query,Datapack);
+	SQL_TQuery(g_hStatsDb,SQL_TopCallback,query,Datapack);
 
 }
 
@@ -299,7 +305,7 @@ public SQL_TopCallback(Handle:owner, Handle:hndl, const String:error[], any:Data
 	new at = ReadPackCell(Datapack);
 	
 	if(!SQL_HasResultSet(hndl) || SQL_GetRowCount(hndl) ==0){
-		ShowTOP(client,total_players-9);
+		ShowTOP(client,g_TotalPlayers-9);
 		return;
 	}
 	new String:name[256];
@@ -308,8 +314,9 @@ public SQL_TopCallback(Handle:owner, Handle:hndl, const String:error[], any:Data
 	new Handle:menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle:MenuStyle_Radio),MenuHandler_Top);
 	
 	new Float:kdr;
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,total_players);
+	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
 	SetMenuTitle(menu,"");
+	new String:sBuffer[200];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
 	{
 		
@@ -325,20 +332,23 @@ public SQL_TopCallback(Handle:owner, Handle:hndl, const String:error[], any:Data
 			deaths=SQL_FetchInt(hndl,6);
 		
 		kdr = SQL_FetchFloat(hndl,5)/deaths;
-		Format(temp,sizeof(temp),"%s%d - %s (%d) - KDR: %.2f\n",temp,i+at,name,SQL_FetchInt(hndl,4),kdr);
+		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - KDR: %.2f\n",i+at,name,SQL_FetchInt(hndl,4),kdr);
 		
-		
+		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
+			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			sBuffer="\0";
+		}
 	} 
 	Format(temp,sizeof(temp),"%s\n ",temp);
 	AddMenuItem(menu,temp,temp);
 	
 	
-	IntToString(at+10,temp,sizeof(temp));
+	IntToString(at+i,temp,sizeof(temp));
 	new String:temp1[20];
 	Format(temp1,sizeof(temp1),"%T","Next",client);
 	if(i>9)
 		AddMenuItem(menu,temp,temp1);
-	IntToString(at-10,temp,sizeof(temp));
+	IntToString(at-i,temp,sizeof(temp));
 	Format(temp1,sizeof(temp1),"%T","Back",client);
 	if(at+i-1 >9)
 		AddMenuItem(menu,temp,temp1);
@@ -364,7 +374,7 @@ public MenuHandler_Top(Handle:menu, MenuAction:action, param1, param2){
 }
 
 public Action:CMD_TopKnife(client,args){
-	if(!g_enabled) 
+	if(!g_bEnabled) 
 		return Plugin_Continue;
 	if(client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
@@ -394,12 +404,12 @@ ShowTOPKnife(client,at){
 		
 	}
 	new String:query[200];
-	if(g_rankbots && g_show_bots_on_rank)
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY knife DESC LIMIT %i, 10",g_minimal_kills,at-1);
+	if(g_bRankBots && g_bShowBotsOnRank)
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY knife DESC LIMIT %i, 10",g_MinimalKills,at-1);
 	else
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY knife DESC LIMIT %i, 10",g_minimal_kills,at-1);
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY knife DESC LIMIT %i, 10",g_MinimalKills,at-1);
 		
-	SQL_TQuery(stats_db,SQL_TopKnifeCallback,query,Datapack);
+	SQL_TQuery(g_hStatsDb,SQL_TopKnifeCallback,query,Datapack);
 
 }
 
@@ -417,7 +427,7 @@ public SQL_TopKnifeCallback(Handle:owner, Handle:hndl, const String:error[], any
 		return;
 	new at = ReadPackCell(Datapack);
 	if(!SQL_HasResultSet(hndl) || SQL_GetRowCount(hndl) ==0){
-		ShowTOPKnife(client,total_players-9);
+		ShowTOPKnife(client,g_TotalPlayers-9);
 		return;
 	}
 	new String:name[256];
@@ -425,8 +435,9 @@ public SQL_TopKnifeCallback(Handle:owner, Handle:hndl, const String:error[], any
 	
 	new Handle:menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle:MenuStyle_Radio),MenuHandler_TopKnife);
 	
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,total_players);
+	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
 	SetMenuTitle(menu,"");
+	new String:sBuffer[200];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
 	{
 		
@@ -436,20 +447,23 @@ public SQL_TopKnifeCallback(Handle:owner, Handle:hndl, const String:error[], any
 			
 		
 	
-		Format(temp,sizeof(temp),"%s%d - %s (%d) - %T: %d\n",temp,i+at,name,SQL_FetchInt(hndl,4),"KnifeKills",client,SQL_FetchInt(hndl,16));
+		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %T: %d\n",i+at,name,SQL_FetchInt(hndl,4),"KnifeKills",client,SQL_FetchInt(hndl,16));
 		
-		
+		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
+			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			sBuffer="\0";
+		}
 	} 
 	Format(temp,sizeof(temp),"%s\n ",temp);
 	AddMenuItem(menu,temp,temp);
 	
 	
-	IntToString(at+10,temp,sizeof(temp));
+	IntToString(at+i,temp,sizeof(temp));
 	new String:temp1[20];
 	Format(temp1,sizeof(temp1),"%T","Next",client);
 	if(i>9)
 		AddMenuItem(menu,temp,temp1);
-	IntToString(at-10,temp,sizeof(temp));
+	IntToString(at-i,temp,sizeof(temp));
 	Format(temp1,sizeof(temp1),"%T","Back",client);
 	if(at+i-1 >9)
 		AddMenuItem(menu,temp,temp1);
@@ -475,7 +489,7 @@ public MenuHandler_TopKnife(Handle:menu, MenuAction:action, param1, param2){
 }
 
 public Action:CMD_TopNade(client,args){
-	if(!g_enabled) 
+	if(!g_bEnabled) 
 		return Plugin_Continue;
 	if(client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
@@ -505,12 +519,12 @@ ShowTOPNade(client,at){
 		
 	}
 	new String:query[200];
-	if(g_rankbots && g_show_bots_on_rank)
-		Format(query,sizeof(query),"SELECT name,score,hegrenade+flashbang+smokegrenade as nadekill FROM rankme where kills >= '%d' ORDER BY nadekill DESC LIMIT %i, 10",g_minimal_kills,at-1);
+	if(g_bRankBots && g_bShowBotsOnRank)
+		Format(query,sizeof(query),"SELECT name,score,hegrenade+flashbang+smokegrenade as nadekill FROM rankme where kills >= '%d' ORDER BY nadekill DESC LIMIT %i, 10",g_MinimalKills,at-1);
 	else
-		Format(query,sizeof(query),"SELECT name,score,hegrenade+flashbang+smokegrenade as nadekill FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY nadekill DESC LIMIT %i, 10",g_minimal_kills,at-1);
+		Format(query,sizeof(query),"SELECT name,score,hegrenade+flashbang+smokegrenade as nadekill FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY nadekill DESC LIMIT %i, 10",g_MinimalKills,at-1);
 		
-	SQL_TQuery(stats_db,SQL_TopNadeCallback,query,Datapack);
+	SQL_TQuery(g_hStatsDb,SQL_TopNadeCallback,query,Datapack);
 
 }
 
@@ -528,15 +542,15 @@ public SQL_TopNadeCallback(Handle:owner, Handle:hndl, const String:error[], any:
 		return;
 	new at = ReadPackCell(Datapack);
 	if(!SQL_HasResultSet(hndl) || SQL_GetRowCount(hndl) ==0){
-		ShowTOPNade(client,total_players-9);
+		ShowTOPNade(client,g_TotalPlayers-9);
 		return;
 	}
 	new String:name[256];
 	new String:temp[500];
 	
 	new Handle:menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle:MenuStyle_Radio),MenuHandler_TopNade);
-	
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,total_players);
+	new String:sBuffer[200];
+	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
 	SetMenuTitle(menu,"");
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
 	{
@@ -547,20 +561,23 @@ public SQL_TopNadeCallback(Handle:owner, Handle:hndl, const String:error[], any:
 			
 		
 	
-		Format(temp,sizeof(temp),"%s%d - %s (%d) - %T: %d\n",temp,i+at,name,SQL_FetchInt(hndl,1),"Kills",client,SQL_FetchInt(hndl,2));
+		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %T: %d\n",i+at,name,SQL_FetchInt(hndl,1),"Kills",client,SQL_FetchInt(hndl,2));
 		
-		
+		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
+			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			sBuffer="\0";
+		}
 	} 
 	Format(temp,sizeof(temp),"%s\n ",temp);
 	AddMenuItem(menu,temp,temp);
 	
 	
-	IntToString(at+10,temp,sizeof(temp));
+	IntToString(at+i,temp,sizeof(temp));
 	new String:temp1[20];
 	Format(temp1,sizeof(temp1),"%T","Next",client);
 	if(i>9)
 		AddMenuItem(menu,temp,temp1);
-	IntToString(at-10,temp,sizeof(temp));
+	IntToString(at-i,temp,sizeof(temp));
 	Format(temp1,sizeof(temp1),"%T","Back",client);
 	if(at+i-1 >9)
 		AddMenuItem(menu,temp,temp1);
@@ -593,22 +610,22 @@ public MenuHandler_DoNothing(Handle:menu, MenuAction:action, param1, param2){
 }
 
 public Action:CMD_Rank(client,args){
-	if(!g_enabled) 
+	if(!g_bEnabled) 
 		return Plugin_Continue;
 	if(client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 	
-	if(stats[client][KILLS] < g_minimal_kills){
-		PrintToChat(client,"%s %t",MSG,"NotRanked",stats[client][KILLS],g_minimal_kills);
+	if(g_aStats[client][KILLS] < g_MinimalKills){
+		PrintToChat(client,"%s %t",MSG,"NotRanked",g_aStats[client][KILLS],g_MinimalKills);
 		return Plugin_Handled;
 	}
 	new String:query[500];
-	if(g_rankbots && g_show_bots_on_rank)
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC",g_minimal_kills);
+	if(g_bRankBots && g_bShowBotsOnRank)
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC",g_MinimalKills);
 	else
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC",g_minimal_kills);
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC",g_MinimalKills);
 	
-	SQL_TQuery(stats_db,SQL_RankCallback,query,client);
+	SQL_TQuery(g_hStatsDb,SQL_RankCallback,query,client);
 	return Plugin_Handled;
 }
 
@@ -625,7 +642,7 @@ public SQL_RankCallback(Handle:owner, Handle:hndl, const String:error[], any:cli
 	GetClientName(client, name, sizeof(name));
 	new String:auth[32];
 	GetClientAuthString(client,auth,sizeof(auth));
-	total_players =SQL_GetRowCount(hndl);
+	g_TotalPlayers =SQL_GetRowCount(hndl);
 	new String:Name_receive[MAX_NAME_LENGTH];
 	new String:Auth_receive[32];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
@@ -634,7 +651,7 @@ public SQL_RankCallback(Handle:owner, Handle:hndl, const String:error[], any:cli
 		SQL_FetchString(hndl,2,Name_receive,MAX_NAME_LENGTH);
 		SQL_FetchString(hndl,1,Auth_receive,32);
 			
-		if((g_rankbyname && StrEqual(Name_receive,name,false)) || (!g_rankbyname && StrEqual(Auth_receive,auth,false))){
+		if((g_bRankByName && StrEqual(Name_receive,name,false)) || (!g_bRankByName && StrEqual(Auth_receive,auth,false))){
 			new Float:kdr;
 			new deaths;
 			if(SQL_FetchInt(hndl,6) == 0)
@@ -643,10 +660,10 @@ public SQL_RankCallback(Handle:owner, Handle:hndl, const String:error[], any:cli
 				deaths=SQL_FetchInt(hndl,6);
 			
 			kdr = SQL_FetchFloat(hndl,5)/deaths;
-			if(g_show_rank_all){
-				CPrintToChatAll("%s %t",MSG,"IsRankedAt", name,i,SQL_GetRowCount(hndl),stats[client][SCORE],stats[client][KILLS],stats[client][DEATHS],kdr);
+			if(g_bShowRankAll){
+				CPrintToChatAll("%s %t",MSG,"IsRankedAt", name,i,SQL_GetRowCount(hndl),g_aStats[client][SCORE],g_aStats[client][KILLS],g_aStats[client][DEATHS],kdr);
 			} else {
-				CPrintToChat(client,"%s %t",MSG,"IsRankedAt", name,i,SQL_GetRowCount(hndl),stats[client][SCORE],stats[client][KILLS],stats[client][DEATHS],kdr);
+				CPrintToChat(client,"%s %t",MSG,"IsRankedAt", name,i,SQL_GetRowCount(hndl),g_aStats[client][SCORE],g_aStats[client][KILLS],g_aStats[client][DEATHS],kdr);
 			}
 			break;
 		}
@@ -654,7 +671,7 @@ public SQL_RankCallback(Handle:owner, Handle:hndl, const String:error[], any:cli
 }
 
 public Action:CMD_Session(client,args){
-	if(!g_enabled) 
+	if(!g_bEnabled) 
 		return Plugin_Continue;
 	if(client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
@@ -664,10 +681,10 @@ public Action:CMD_Session(client,args){
 	SetMenuPagination(panel,4);
 	Format(temp,sizeof(temp),"- %T\n","BasicStats",client);
 	StrCat(text,255,temp);
-	Format(temp,sizeof(temp),"%T: %i\n","Points",client,session[client][SCORE]);
+	Format(temp,sizeof(temp),"%T: %i\n","Points",client,g_aSession[client][SCORE]);
 	StrCat(text,255,temp);
-	new ikills = session[client][KILLS];
-	new ideaths=session[client][DEATHS];
+	new ikills = g_aSession[client][KILLS];
+	new ideaths=g_aSession[client][DEATHS];
 	new deaths;
 	if(ideaths == 0)
 		deaths = 1;
@@ -676,45 +693,45 @@ public Action:CMD_Session(client,args){
 	new Float:kills = IntToFloat(ikills);
 
 	new shots;
-	if(session[client][SHOTS] == 0)
+	if(g_aSession[client][SHOTS] == 0)
 		shots = 1;
 	else
-		shots = session[client][SHOTS];
+		shots = g_aSession[client][SHOTS];
 	
 	Format(temp,255,"%T   KDR: %.2f\n","KillsDeaths",client,ikills,ideaths,kills/deaths);
 	StrCat(text,255,temp);
-	Format(temp,255,"Headshots: %d   %T: %d   TKs: %d\n ",session[client][HEADSHOTS],"Suicides",client,session[client][SUICIDES],session[client][TK]);
+	Format(temp,255,"Headshots: %d   %T: %d   TKs: %d\n ",g_aSession[client][HEADSHOTS],"Suicides",client,g_aSession[client][SUICIDES],g_aSession[client][TK]);
 	StrCat(text,255,temp);
 	AddMenuItem(panel,"",text);
 	text="";
 	
 	Format(temp,sizeof(temp),"- %T\n","RoundStats",client);
 	StrCat(text,255,temp);
-	Format(temp,255,"%T: %d/%d   %T: %d/%d\n ","TRWins",client,session[client][TR_WIN],session[client][ROUNDS_TR],"CTWins",client,session[client][CT_WIN],session[client][ROUNDS_CT]);
+	Format(temp,255,"%T: %d/%d   %T: %d/%d\n ","TRWins",client,g_aSession[client][TR_WIN],g_aSession[client][ROUNDS_TR],"CTWins",client,g_aSession[client][CT_WIN],g_aSession[client][ROUNDS_CT]);
 	StrCat(text,255,temp);
 	AddMenuItem(panel,"",text);
 	text="";
 	
 	Format(temp,sizeof(temp),"- %T\n","HitStats",client);
 	StrCat(text,255,temp);
-	Format(temp,255,"%T: %d   %T: %d   %T: %.2f%%\n ","Shots",client,shots,"Hits",client,session[client][HITS],"Accuracy",client,IntToFloat(session[client][HITS])/shots*100);
+	Format(temp,255,"%T: %d   %T: %d   %T: %.2f%%\n ","Shots",client,shots,"Hits",client,g_aSession[client][HITS],"Accuracy",client,IntToFloat(g_aSession[client][HITS])/shots*100);
 	StrCat(text,255,temp);
 	AddMenuItem(panel,"",text);
 	text="";
 	
 	Format(temp,sizeof(temp),"- %T\n","BombHostagesStats",client);
 	StrCat(text,255,temp);
-	Format(temp,255,"%T: %d   %T: %d   %T: %d\n","PlantedBombs",client,session[client][C4_PLANTED],"ExplodedBombs",client,session[client][C4_EXPLODED],"DefusedBombs",client,session[client][C4_DEFUSED]);
+	Format(temp,255,"%T: %d   %T: %d   %T: %d\n","PlantedBombs",client,g_aSession[client][C4_PLANTED],"ExplodedBombs",client,g_aSession[client][C4_EXPLODED],"DefusedBombs",client,g_aSession[client][C4_DEFUSED]);
 	StrCat(text,255,temp);
-	Format(temp,255,"%T: %d","RescuedHostages",client,session[client][HOSTAGES_RESCUED]);
+	Format(temp,255,"%T: %d","RescuedHostages",client,g_aSession[client][HOSTAGES_RESCUED]);
 	StrCat(text,255,temp);
 	AddMenuItem(panel,"",text);
 	text="";
 	
-	if(g_vip_enabled){
+	if(g_bVipEnabled){
 		Format(temp,sizeof(temp),"- %T\n","VIPStats",client);
 		StrCat(text,255,temp);
-		Format(temp,255,"%T: %d/%d   %T: %d\n ","VIPEscapes",client,session[client][VIP_ESCAPED],session[client][VIP_PLAYED],"VIPsKilled",client,session[client][VIP_KILLED]);
+		Format(temp,255,"%T: %d/%d   %T: %d\n ","VIPEscapes",client,g_aSession[client][VIP_ESCAPED],g_aSession[client][VIP_PLAYED],"VIPsKilled",client,g_aSession[client][VIP_KILLED]);
 		StrCat(text,255,temp);
 		AddMenuItem(panel,"",text);
 		text="";
@@ -722,7 +739,7 @@ public Action:CMD_Session(client,args){
 	
 	Format(temp,sizeof(temp),"- %T\n","OtherStats",client);
 	StrCat(text,255,temp);
-	new time = GetTime()-session[client][CONNECTED];
+	new time = GetTime()-g_aSession[client][CONNECTED];
 	new hours = RoundToFloor(time/3600.0);
 	time = time-(hours*3600);
 	
@@ -739,7 +756,7 @@ public Action:CMD_Session(client,args){
 }
 
 public Action:CMD_HitBox(client,args){
-	if(!g_enabled) 
+	if(!g_bEnabled) 
 		return Plugin_Continue;
 	if(client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
@@ -748,7 +765,7 @@ public Action:CMD_HitBox(client,args){
 	new String:temp[255];
 	new ihits;
 	new Float:hits;
-	ihits = stats[client][HITS];
+	ihits = g_aStats[client][HITS];
 	new String:text[255];
 	if(ihits == 0)
 		hits= 1.0;
@@ -757,19 +774,19 @@ public Action:CMD_HitBox(client,args){
 	
 	Format(temp,255,"HitBox:\n");
 	StrCat(text,255,temp);
-	Format(temp,255,"%T: %d (%.2f%%)\n","Head",client,hitbox[client][1],(hitbox[client][1]/hits)*100);
+	Format(temp,255,"%T: %d (%.2f%%)\n","Head",client,g_aHitBox[client][1],(g_aHitBox[client][1]/hits)*100);
 	StrCat(text,255,temp);
-	Format(temp,255,"%T: %d (%.2f%%)\n","Chest",client,hitbox[client][2],(hitbox[client][2]/hits)*100);
+	Format(temp,255,"%T: %d (%.2f%%)\n","Chest",client,g_aHitBox[client][2],(g_aHitBox[client][2]/hits)*100);
 	StrCat(text,255,temp);
-	Format(temp,255,"%T: %d (%.2f%%)\n","Stomach",client,hitbox[client][3],(hitbox[client][3]/hits)*100);
+	Format(temp,255,"%T: %d (%.2f%%)\n","Stomach",client,g_aHitBox[client][3],(g_aHitBox[client][3]/hits)*100);
 	StrCat(text,255,temp);
-	Format(temp,255,"%T: %d (%.2f%%)\n","LeftArm",client,hitbox[client][4],(hitbox[client][4]/hits)*100);
+	Format(temp,255,"%T: %d (%.2f%%)\n","LeftArm",client,g_aHitBox[client][4],(g_aHitBox[client][4]/hits)*100);
 	StrCat(text,255,temp);
-	Format(temp,255,"%T: %d (%.2f%%)\n","RightArm",client,hitbox[client][5],(hitbox[client][5]/hits)*100);
+	Format(temp,255,"%T: %d (%.2f%%)\n","RightArm",client,g_aHitBox[client][5],(g_aHitBox[client][5]/hits)*100);
 	StrCat(text,255,temp);
-	Format(temp,255,"%T: %d (%.2f%%)\n","LeftLeg",client,hitbox[client][6],(hitbox[client][6]/hits)*100);
+	Format(temp,255,"%T: %d (%.2f%%)\n","LeftLeg",client,g_aHitBox[client][6],(g_aHitBox[client][6]/hits)*100);
 	StrCat(text,255,temp);
-	Format(temp,255,"%T: %d (%.2f%%)","RightLeg",client,hitbox[client][7],(hitbox[client][7]/hits)*100);
+	Format(temp,255,"%T: %d (%.2f%%)","RightLeg",client,g_aHitBox[client][7],(g_aHitBox[client][7]/hits)*100);
 	StrCat(text,255,temp);
 	AddMenuItem(panel,"",text);
 
@@ -779,13 +796,13 @@ public Action:CMD_HitBox(client,args){
 }
 
 public Action:CMD_WeaponMe(client,args){
-	if(!g_enabled) 
+	if(!g_bEnabled) 
 		return Plugin_Continue;
 	if(client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 	new weapons_a[28];
 	for(new a=0;a<=27;a++){
-		weapons_a[a] = weapons[client][a];
+		weapons_a[a] = g_aWeapons[client][a];
 	}
 	new weapons_b[28][2];
 	new index;
@@ -816,7 +833,7 @@ public Action:CMD_WeaponMe(client,args){
 	}
 	new Handle:panel = CreateMenu(MenuHandler_DoNothing);
 	
-	new ikills =stats[client][KILLS];
+	new ikills =g_aStats[client][KILLS];
 	
 	new Float:hits;
 	if(ikills == 0)
@@ -828,7 +845,7 @@ public Action:CMD_WeaponMe(client,args){
 	Format(temp,sizeof(temp),"%T","WeaponsStats",client);
 	SetMenuTitle(panel, temp);
 	for(new i=0;i<=27;i++){
-		Format(temp,sizeof(temp),"%s: %d (%.2f%%)",weapons_names1[weapons_b[i][0]],weapons_b[i][1],(weapons_b[i][1]/hits)*100);
+		Format(temp,sizeof(temp),"%s: %d (%.2f%%)",g_sWeaponsNamesFull[weapons_b[i][0]],weapons_b[i][1],(weapons_b[i][1]/hits)*100);
 		AddMenuItem(panel,temp,temp,ITEMDRAW_DISABLED);
 	}
 	
@@ -837,16 +854,17 @@ public Action:CMD_WeaponMe(client,args){
 }
 
 public Action:CMD_StatsMe(client,args){
-	if(!g_enabled) 
+	if(!g_bEnabled) 
 		return Plugin_Continue;
+	
 	if(client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 	new String:query[500];
-	if(g_rankbots && g_show_bots_on_rank)
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC",g_minimal_kills);
+	if(g_bRankBots && g_bShowBotsOnRank)
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC",g_MinimalKills);
 	else
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC",g_minimal_kills);
-	SQL_TQuery(stats_db,SQL_StatsMeCallback,query,client);
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC",g_MinimalKills);
+	SQL_TQuery(g_hStatsDb,SQL_StatsMeCallback,query,client);
 	return Plugin_Handled;
 	
 }
@@ -864,7 +882,7 @@ public SQL_StatsMeCallback(Handle:owner, Handle:hndl, const String:error[], any:
 	GetClientAuthString(client,auth,sizeof(auth));
 	new String:name[MAX_NAME_LENGTH];
 	GetClientName(client,name,sizeof(name));
-	total_players =SQL_GetRowCount(hndl);
+	g_TotalPlayers =SQL_GetRowCount(hndl);
 	new String:Auth_receive[32];
 	new String:Name_receive[MAX_NAME_LENGTH];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
@@ -874,12 +892,12 @@ public SQL_StatsMeCallback(Handle:owner, Handle:hndl, const String:error[], any:
 		
 		SQL_FetchString(hndl,2,Name_receive,MAX_NAME_LENGTH);
 		
-		if((g_rankbyname && StrEqual(name,Name_receive)) || (!g_rankbyname && StrEqual(Auth_receive,auth,false))){
+		if((g_bRankByName && StrEqual(name,Name_receive)) || (!g_bRankByName && StrEqual(Auth_receive,auth,false))){
 			new Handle:panel = CreateMenuEx(_,MenuHandler_DoNothing,MENU_ACTIONS_ALL);
 			new String:text[255];
 			SetMenuPagination(panel,4);
-			new ikills = stats[client][KILLS];
-			new ideaths=stats[client][DEATHS];
+			new ikills = g_aStats[client][KILLS];
+			new ideaths=g_aStats[client][DEATHS];
 			new deaths;
 			if(ideaths == 0)
 				deaths = 1;
@@ -887,49 +905,49 @@ public SQL_StatsMeCallback(Handle:owner, Handle:hndl, const String:error[], any:
 				deaths=ideaths;
 			new Float:kills = IntToFloat(ikills);
 			new shots;
-			if(stats[client][SHOTS] == 0)
+			if(g_aStats[client][SHOTS] == 0)
 				shots = 1;
 			else
-				shots = stats[client][SHOTS];
+				shots = g_aStats[client][SHOTS];
 			new String:temp[255];
 			Format(temp,sizeof(temp),"- %T\n","BasicStats",client);
 			StrCat(text,255,temp);
-			Format(temp,sizeof(temp),"Rank: %i/%i   %T: %i [%i]\n",i,SQL_GetRowCount(hndl),"Points",client,stats[client][SCORE],session[client][SCORE]);
+			Format(temp,sizeof(temp),"Rank: %i/%i   %T: %i [%i]\n",i,SQL_GetRowCount(hndl),"Points",client,g_aStats[client][SCORE],g_aSession[client][SCORE]);
 			StrCat(text,255,temp);
 			Format(temp,255,"%T   KDR: %.2f\n","KillsDeaths",client,ikills,ideaths,kills/deaths);
 			StrCat(text,255,temp);
-			Format(temp,255,"Headshots: %d   %T: %d   TKs: %d\n ",stats[client][HEADSHOTS],"Suicides",client,stats[client][SUICIDES],stats[client][TK]);
+			Format(temp,255,"Headshots: %d   %T: %d   TKs: %d\n ",g_aStats[client][HEADSHOTS],"Suicides",client,g_aStats[client][SUICIDES],g_aStats[client][TK]);
 			StrCat(text,255,temp);
 			AddMenuItem(panel,"",text);
 			text="";
 			
 			Format(temp,sizeof(temp),"- %T\n","RoundStats",client);
 			StrCat(text,255,temp);
-			Format(temp,255,"%T: %d/%d   %T: %d/%d\n ","TRWins",client,stats[client][TR_WIN],stats[client][ROUNDS_TR],"CTWins",client,stats[client][CT_WIN],stats[client][ROUNDS_CT]);
+			Format(temp,255,"%T: %d/%d   %T: %d/%d\n ","TRWins",client,g_aStats[client][TR_WIN],g_aStats[client][ROUNDS_TR],"CTWins",client,g_aStats[client][CT_WIN],g_aStats[client][ROUNDS_CT]);
 			StrCat(text,255,temp);
 			AddMenuItem(panel,"",text);
 			text="";
 			
 			Format(temp,sizeof(temp),"- %T\n","HitStats",client);
 			StrCat(text,255,temp);
-			Format(temp,255,"%T: %d   %T: %d   %T: %.2f%%\n ","Shots",client,shots,"Hits",client,stats[client][HITS],"Accuracy",client,IntToFloat(stats[client][HITS])/shots*100);
+			Format(temp,255,"%T: %d   %T: %d   %T: %.2f%%\n ","Shots",client,shots,"Hits",client,g_aStats[client][HITS],"Accuracy",client,IntToFloat(g_aStats[client][HITS])/shots*100);
 			StrCat(text,255,temp);
 			AddMenuItem(panel,"",text);
 			text="";
 			
 			Format(temp,sizeof(temp),"- %T\n","BombHostagesStats",client);
 			StrCat(text,255,temp);
-			Format(temp,255,"%T: %d   %T: %d   %T: %d\n","PlantedBombs",client,stats[client][C4_PLANTED],"ExplodedBombs",client,stats[client][C4_EXPLODED],"DefusedBombs",client,stats[client][C4_DEFUSED]);
+			Format(temp,255,"%T: %d   %T: %d   %T: %d\n","PlantedBombs",client,g_aStats[client][C4_PLANTED],"ExplodedBombs",client,g_aStats[client][C4_EXPLODED],"DefusedBombs",client,g_aStats[client][C4_DEFUSED]);
 			StrCat(text,255,temp);
-			Format(temp,255,"%T: %d","RescuedHostages",client,stats[client][HOSTAGES_RESCUED]);
+			Format(temp,255,"%T: %d","RescuedHostages",client,g_aStats[client][HOSTAGES_RESCUED]);
 			StrCat(text,255,temp);
 			AddMenuItem(panel,"",text);
 			text="";
 						
-			if(g_vip_enabled){
+			if(g_bVipEnabled){
 				Format(temp,sizeof(temp),"- %T\n","VIPStats",client);
 				StrCat(text,255,temp);
-				Format(temp,255,"%T: %d/%d   %T: %d\n ","VIPEscapes",client,stats[client][VIP_ESCAPED],stats[client][VIP_PLAYED],"VIPsKilled",client,stats[client][VIP_KILLED]);
+				Format(temp,255,"%T: %d/%d   %T: %d\n ","VIPEscapes",client,g_aStats[client][VIP_ESCAPED],g_aStats[client][VIP_PLAYED],"VIPsKilled",client,g_aStats[client][VIP_KILLED]);
 				StrCat(text,255,temp);
 				AddMenuItem(panel,"",text);
 				text="";
@@ -937,7 +955,7 @@ public SQL_StatsMeCallback(Handle:owner, Handle:hndl, const String:error[], any:
 			
 			Format(temp,sizeof(temp),"- %T\n","OtherStats",client);
 			StrCat(text,255,temp);
-			new time = stats[client][CONNECTED] + GetTime()-session[client][CONNECTED];
+			new time = g_aStats[client][CONNECTED] + GetTime()-g_aSession[client][CONNECTED];
 			new hours = RoundToFloor(time/3600.0);
 			time = time-(hours*3600);
 			
@@ -961,16 +979,16 @@ public PanelNoHandle(Handle:menu, MenuAction:action, param1, param2){
 }
 
 public Action:CMD_Next(client,args){
-	if(!g_enabled) 
+	if(!g_bEnabled) 
 		return Plugin_Continue;
 	if(client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 	new String:query[500];
-	if(g_rankbots && g_show_bots_on_rank)
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC",g_minimal_kills);
+	if(g_bRankBots && g_bShowBotsOnRank)
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC",g_MinimalKills);
 	else
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC",g_minimal_kills);
-	SQL_TQuery(stats_db,SQL_NextCallback,query,client);
+		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC",g_MinimalKills);
+	SQL_TQuery(g_hStatsDb,SQL_NextCallback,query,client);
 	return Plugin_Handled;
 }
 
@@ -984,7 +1002,7 @@ public SQL_NextCallback(Handle:owner, Handle:hndl, const String:error[], any:cli
 		return;
 	new i;
 	new a;
-	total_players =SQL_GetRowCount(hndl);
+	g_TotalPlayers =SQL_GetRowCount(hndl);
 	new String:next_players_name[10][MAX_NAME_LENGTH];
 	new next_players_score[10];
 	new bool:dobreak;
@@ -1002,7 +1020,7 @@ public SQL_NextCallback(Handle:owner, Handle:hndl, const String:error[], any:cli
 		SQL_FetchString(hndl,2,Name_receive,MAX_NAME_LENGTH);
 		
 		
-		if((g_rankbyname && StrEqual(name,Name_receive)) || (!g_rankbyname && StrEqual(Auth_receive,auth,false))){
+		if((g_bRankByName && StrEqual(name,Name_receive)) || (!g_bRankByName && StrEqual(Auth_receive,auth,false))){
 		
 			dobreak=true;
 		
@@ -1040,7 +1058,7 @@ public SQL_NextCallback(Handle:owner, Handle:hndl, const String:error[], any:cli
 	}
 	for(new b=0;b<=max;b++){
 		if(!StrEqual(next_players_name[b],"",false)){
-			Format(temp,sizeof(temp),"- %s (%d) => +%d\n",next_players_name[b],next_players_score[b],next_players_score[b]-stats[client][SCORE]);
+			Format(temp,sizeof(temp),"- %s (%d) => +%d\n",next_players_name[b],next_players_score[b],next_players_score[b]-g_aStats[client][SCORE]);
 			StrCat(text,500,temp);
 		}
 		
@@ -1053,20 +1071,20 @@ public SQL_NextCallback(Handle:owner, Handle:hndl, const String:error[], any:cli
 
 public Action:CMD_ResetOwnRank(client,args){
 
-	if(!g_enabled || !g_resetownrank) 
+	if(!g_bEnabled || !g_bResetOwnRank) 
 		return Plugin_Continue;
 	if(client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 	new String:param[64];
 	new String:query[100];
-	if(g_rankbyname){
+	if(g_bRankByName){
 		GetClientName(client,param,sizeof(param));
 		Format(query,sizeof(query),"DELETE FROM rankme WHERE name='%s'",param);
 	} else {
 		GetClientAuthString(client,param,sizeof(param));
 		Format(query,sizeof(query),"DELETE FROM rankme WHERE steam='%s'",param);
 	}
-	SQL_TQuery(stats_db,SQL_NothingCallback,query);
+	SQL_TQuery(g_hStatsDb,SQL_NothingCallback,query);
 	LogAction(client,-1,"[RankMe]: Reseted own rank (%s)",param);
 	OnClientPutInServer(client);
 	ReplyToCommand(client,"[RankMe]: Reseted");

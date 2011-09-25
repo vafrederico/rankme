@@ -248,3 +248,9 @@
 = V.2.5.1 (09/24/11):
 	 => Fix:
 		   = Fixed chat not showing up when cvar rankme_silenttriggers was 1. (thanks GrO)
+		   = Fixed clamping the top's. (thanks a banania and others that reported it)
+	 => Changes: ( needed for approval ) (thanks Antithasys)
+		   = Now register properly the commands.
+		   = Changed the chat triggers.
+		   = Removed the rankme_silenttriggers cvar because we shouldn't block any chat messages.
+		   = Now global variables are better named.
