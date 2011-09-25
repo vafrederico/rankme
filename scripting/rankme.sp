@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.5.1"
+#define PLUGIN_VERSION "2.5.2"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -129,40 +129,40 @@ public OnPluginStart(){
 	g_cvarEnabled = CreateConVar("rankme_enabled","1","Is RankMe enabled? 1 = true 0 = false",_,true,0.0,true,1.0);
 	g_cvarRankbots = CreateConVar("rankme_rankbots","0","Rank bots? 1 = true 0 = false",_,true,0.0,true,1.0);
 	g_cvarAutopurge = CreateConVar("rankme_autopurge","0","Auto-Purge inactive players? X = Days  0 = Off",_,true,0.0);
-	g_cvarPointsBombDefusedTeam = CreateConVar("rankme_PointsBombDefused_team","2","How many points CTs got for defusing the C4?",_,true,0.0);
-	g_cvarPointsBombDefusedPlayer = CreateConVar("rankme_PointsBombDefused_player","2","How many points the CT who defused got additional?",_,true,0.0);
-	g_cvarPointsBombPlantedTeam = CreateConVar("rankme_PointsBombPlanted_team","2","How many points TRs got for planting the C4?",_,true,0.0);
-	g_cvarPointsBombPlantedPlayer = CreateConVar("rankme_PointsBombPlanted_player","2","How many points the TR who planted got additional?",_,true,0.0);
-	g_cvarPointsBombExplodeTeam = CreateConVar("rankme_PointsBombExploded_team","2","How many points TRs got for exploding the C4?",_,true,0.0);
-	g_cvarPointsBombExplodePlayer = CreateConVar("rankme_PointsBombExploded_player","2","How many points the TR who planted got additional?",_,true,0.0);
-	g_cvarPointsHostageRescTeam = CreateConVar("rankme_PointsHostage_rescued_team","2","How many points CTs got for rescuing the hostage?",_,true,0.0);
-	g_cvarPointsHostageRescPlayer = CreateConVar("rankme_PointsHostage_rescued_player","2","How many points the CT who rescued got additional?",_,true,0.0);
-	g_cvarPointsHs = CreateConVar("rankme_PointsHs","1","How many additional points a player got for a HeadShot?",_,true,0.0);
-	g_cvarPointsKillCt = CreateConVar("rankme_PointsKill_ct","2","How many points a CT got for killing?",_,true,0.0);
-	g_cvarPointsKillTr = CreateConVar("rankme_PointsKill_tr","2","How many points a TR got for killing?",_,true,0.0);
-	g_cvarPointsKillBonusCt = CreateConVar("rankme_PointsKillBonus_ct","1","How many points a CT got for killing additional by the diffrence of points?",_,true,0.0);
-	g_cvarPointsKillBonusTr = CreateConVar("rankme_PointsKillBonus_tr","1","How many points a TR got for killing additional by the diffrence of points?",_,true,0.0);
-	g_cvarPointsKillBonusDifCt = CreateConVar("rankme_PointsKillBonus_dif_ct","100","How many points of diffrence is needed for a CT to got the bonus?",_,true,0.0);
-	g_cvarPointsKillBonusDifTr = CreateConVar("rankme_PointsKillBonus_dif_tr","100","How many points of diffrence is needed for a TR to got the bonus?",_,true,0.0);
-	g_cvarPointsCtRoundWin = CreateConVar("rankme_PointsCt_round_win","0","How many points an alive CT got for winning the round?",_,true,0.0);
-	g_cvarPointsTrRoundWin = CreateConVar("rankme_PointsTr_round_win","0","How many points an alive TR got for winning the round?",_,true,0.0);
-	g_cvarPointsKnifeMultiplier = CreateConVar("rankme_PointsKnife_multiplier","2.0","Multiplier of points by knife",_,true,0.0);
-	g_cvarPointsStart = CreateConVar("rankme_PointsStart","1000","Starting points",_,true,0.0);
+	g_cvarPointsBombDefusedTeam = CreateConVar("rankme_points_bomb_defused_team","2","How many points CTs got for defusing the C4?",_,true,0.0);
+	g_cvarPointsBombDefusedPlayer = CreateConVar("rankme_points_bomb_defused_player","2","How many points the CT who defused got additional?",_,true,0.0);
+	g_cvarPointsBombPlantedTeam = CreateConVar("rankme_points_bomb_planted_team","2","How many points TRs got for planting the C4?",_,true,0.0);
+	g_cvarPointsBombPlantedPlayer = CreateConVar("rankme_points_bomb_planted_player","2","How many points the TR who planted got additional?",_,true,0.0);
+	g_cvarPointsBombExplodeTeam = CreateConVar("rankme_points_bomb_exploded_team","2","How many points TRs got for exploding the C4?",_,true,0.0);
+	g_cvarPointsBombExplodePlayer = CreateConVar("rankme_points_bomb_exploded_player","2","How many points the TR who planted got additional?",_,true,0.0);
+	g_cvarPointsHostageRescTeam = CreateConVar("rankme_points_hostage_rescued_team","2","How many points CTs got for rescuing the hostage?",_,true,0.0);
+	g_cvarPointsHostageRescPlayer = CreateConVar("rankme_points_hostage_rescued_player","2","How many points the CT who rescued got additional?",_,true,0.0);
+	g_cvarPointsHs = CreateConVar("rankme_points_hs","1","How many additional points a player got for a HeadShot?",_,true,0.0);
+	g_cvarPointsKillCt = CreateConVar("rankme_points_kill_ct","2","How many points a CT got for killing?",_,true,0.0);
+	g_cvarPointsKillTr = CreateConVar("rankme_points_kill_tr","2","How many points a TR got for killing?",_,true,0.0);
+	g_cvarPointsKillBonusCt = CreateConVar("rankme_points_kill_bonus_ct","1","How many points a CT got for killing additional by the diffrence of points?",_,true,0.0);
+	g_cvarPointsKillBonusTr = CreateConVar("rankme_points_kill_bonus_tr","1","How many points a TR got for killing additional by the diffrence of points?",_,true,0.0);
+	g_cvarPointsKillBonusDifCt = CreateConVar("rankme_points_kill_bonus_dif_ct","100","How many points of diffrence is needed for a CT to got the bonus?",_,true,0.0);
+	g_cvarPointsKillBonusDifTr = CreateConVar("rankme_points_kill_bonus_dif_tr","100","How many points of diffrence is needed for a TR to got the bonus?",_,true,0.0);
+	g_cvarPointsCtRoundWin = CreateConVar("rankme_points_ct_round_win","0","How many points an alive CT got for winning the round?",_,true,0.0);
+	g_cvarPointsTrRoundWin = CreateConVar("rankme_points_tr_round_win","0","How many points an alive TR got for winning the round?",_,true,0.0);
+	g_cvarPointsKnifeMultiplier = CreateConVar("rankme_points_knife_multiplier","2.0","Multiplier of points by knife",_,true,0.0);
+	g_cvarPointsStart = CreateConVar("rankme_points_start","1000","Starting points",_,true,0.0);
 	g_cvarMinimalKills = CreateConVar("rankme_minimal_kills","0","Minimal kills for entering the rank",_,true,0.0);
-	g_cvarPercentPointsLose = CreateConVar("rankme_percent_PointsLose","1.0","Multiplier of losing points. (WARNING: MAKE SURE TO INPUT IT AS FLOAT) 1.0 equals lose same amount as won by the killer, 0.0 equals no lose",_,true,0.0);
-	g_cvarPointsLoseRoundCeil = CreateConVar("rankme_PointsLose_round_ceil","1","If the points is f1oat, round it to next the highest or lowest? 1 = highest 0 = lowest",_,true,0.0,true,1.0);
+	g_cvarPercentPointsLose = CreateConVar("rankme_percent_points_lose","1.0","Multiplier of losing points. (WARNING: MAKE SURE TO INPUT IT AS FLOAT) 1.0 equals lose same amount as won by the killer, 0.0 equals no lose",_,true,0.0);
+	g_cvarPointsLoseRoundCeil = CreateConVar("rankme_points_lose_round_ceil","1","If the points is f1oat, round it to next the highest or lowest? 1 = highest 0 = lowest",_,true,0.0,true,1.0);
 	g_cvarChatChange = CreateConVar("rankme_changes_chat","1","Show points changes on chat? 1 = true 0 = false",_,true,0.0,true,1.0);
 	g_cvarShowRankAll = CreateConVar("rankme_show_rank_all","0","When rank command is used, show for all the rank of the player? 1 = true 0 = false",_,true,0.0,true,1.0);
 	g_cvarShowBotsOnRank = CreateConVar("rankme_show_bots_on_rank","0","Show bots on rank/top/etc? 1 = true 0 = false",_,true,0.0,true,1.0);
 	g_cvarResetOwnRank = CreateConVar("rankme_resetownrank","0","Allow player to reset his own rank? 1 = true 0 = false",_,true,0.0,true,1.0);
 	g_cvarMinimumPlayers = CreateConVar("rankme_minimumplayers","2","Minimum players to start giving points",_,true,0.0);
 	g_cvarVipEnabled = CreateConVar("rankme_vip_enabled","0","Show AS_ maps statiscs (VIP mod) on statsme and session?",_,true,0.0,true,1.0);
-	g_cvarPointsVipEscapedTeam = CreateConVar("rankme_PointsVip_escaped_team","2","How many points CTs got helping the VIP to escaping?",_,true,0.0);
-	g_cvarPointsVipEscapedPlayer = CreateConVar("rankme_PointsVip_escaped_player","2","How many points the VIP got for escaping?",_,true,0.0);
-	g_cvarPointsVipKilledTeam = CreateConVar("rankme_PointsVip_killed_team","2","How many points TRs got for killing the VIP?",_,true,0.0);
-	g_cvarPointsVipKilledPlayer = CreateConVar("rankme_PointsVip_killed_player","2","How many points the TR who killed the VIP got additional?",_,true,0.0);
-	g_cvarPointsLoseTk = CreateConVar("rankme_PointsLose_tk","0","How many points a player lose for Team Killing?",_,true,0.0);
-	g_cvarPointsLoseSuicide = CreateConVar("rankme_PointsLose_suicide","0","How many points a player lose for Suiciding?",_,true,0.0);
+	g_cvarPointsVipEscapedTeam = CreateConVar("rankme_points_vip_escaped_team","2","How many points CTs got helping the VIP to escaping?",_,true,0.0);
+	g_cvarPointsVipEscapedPlayer = CreateConVar("rankme_points_vip_escaped_player","2","How many points the VIP got for escaping?",_,true,0.0);
+	g_cvarPointsVipKilledTeam = CreateConVar("rankme_points_vip_killed_team","2","How many points TRs got for killing the VIP?",_,true,0.0);
+	g_cvarPointsVipKilledPlayer = CreateConVar("rankme_points_vip_killed_player","2","How many points the TR who killed the VIP got additional?",_,true,0.0);
+	g_cvarPointsLoseTk = CreateConVar("rankme_points_lose_tk","0","How many points a player lose for Team Killing?",_,true,0.0);
+	g_cvarPointsLoseSuicide = CreateConVar("rankme_points_lose_suicide","0","How many points a player lose for Suiciding?",_,true,0.0);
 	g_cvarRankByName = CreateConVar("rankme_rank_by_name","0","Rank players by name? 1 = true 0 = false",_,true,0.0,true,1.0);
 	g_cvarFfa = CreateConVar("rankme_ffa","0","FFA mode? 1 = true 0 = false",_,true,0.0,true,1.0);
 	g_cvarMysql = CreateConVar("rankme_mysql","0","Using MySQL? 1 = true 0 = false (SQLite)",_,true,0.0,true,1.0);
@@ -249,17 +249,9 @@ public OnPluginStart(){
 	RegConsoleCmd("sm_statsme",CMD_StatsMe);
 	RegConsoleCmd("sm_next",CMD_Next);
 
-	//	Hook the usermessage for chat triggers
-	new UserMsg:umSayText2 = GetUserMessageId("SayText2");
-	if (umSayText2 != INVALID_MESSAGE_ID)
-	{
-		HookUserMessage(umSayText2, OnSayText2, true);
-	}
-	else
-	{
-		LogError("[RankMe] Error hooking usermessage saytext2.  Plugin disabled.");
-		SetFailState("Error hooking usermessage saytext2");	
-	}
+	//	Hook the say and say_team for chat triggers
+	AddCommandListener(OnSayText, "say");
+	AddCommandListener(OnSayText, "say_team");
 	
 	new Handle:cvarVersion = CreateConVar("rankme_version",PLUGIN_VERSION,"RankMe Version",FCVAR_PLUGIN|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	// UPDATE THE CVAR IF NEEDED
@@ -665,63 +657,45 @@ public Action:OnClientChangeName(Handle:event, const String:name[], bool:dontBro
 }
 
 // Code made by Antithasys
-public Action:OnSayText2(UserMsg:msg_id, Handle:bf, const clients[], numClients, bool:reliable, bool:init)
+public Action:OnSayText(client, const String:command[], argc)
 {
-	if(!g_bEnabled) 
-	{
-		return Plugin_Continue;
-	}
-	//PrintToServer("Printed");
-
-	new client = BfReadByte(bf);
-	if (client == SENDER_WORLD || client != clients[0]) { // Don't get console messages
-		return Plugin_Continue;
-	}
-
-	new bool:bChat = bool:BfReadByte(bf);
-	if (!bChat) { // Check if is a chat message
+	if(!g_bEnabled || client == SENDER_WORLD || IsChatTrigger()) 
+	{ // Don't parse if plugin is disabled or if is from the console or a chat trigger (e.g: ! or /)
 		return Plugin_Continue;
 	}
 	
-	decl String:sBuffer[32];
-	BfReadString(bf, sBuffer, sizeof(sBuffer)); // Skip Translation Name
-	BfReadString(bf, sBuffer, sizeof(sBuffer)); // Skip Sender Name
-	
-	/**
-	Get the message
-	*/
 	decl String:cpMessage[256];
 	decl String:sWords[64][256];
-	BfReadString(bf, cpMessage, sizeof(cpMessage));
-
-	ExplodeString(cpMessage, " ", sWords, sizeof(sWords), sizeof(sWords[]));
+	GetCmdArgString(cpMessage,sizeof(cpMessage)); // Get the message
+	ReplaceString(cpMessage,sizeof(cpMessage),"\"",""); // Text come inside quotes
+	ExplodeString(cpMessage, " ", sWords, sizeof(sWords), sizeof(sWords[])); // Explode it for use at top, topknife, topnade and topweapon
 
 	// Proccess the text
-	if (StrEqual(sWords[0], "rank", false))
+	if (StrEqual(cpMessage, "rank", false))
 	{
 		CMD_Rank(client, 0);
 	}
-	else if (StrEqual(sWords[0], "statsme", false))
+	else if (StrEqual(cpMessage, "statsme", false))
 	{
 		CMD_StatsMe(client, 0);
 	}
-	else if (StrEqual(sWords[0], "hitbox", false))
+	else if (StrEqual(cpMessage, "hitbox", false))
 	{
-		CreateTimer(0.001, Timer_HitBox,client); // Build the menu on the next frame
+		CMD_HitBox(client,0);
 	}
-	else if (StrEqual(sWords[0], "weaponme", false))
+	else if (StrEqual(cpMessage, "weaponme", false))
 	{
-		CreateTimer(0.001, Timer_WeaponMe, client); // Build the menu on the next frame
+		CMD_WeaponMe(client,0);
 	}
-	else if (StrEqual(sWords[0], "session", false))
+	else if (StrEqual(cpMessage, "session", false))
 	{
-		CreateTimer(0.001, Timer_Session, client); // Build the menu on the next frame
+		CMD_Session(client,0);
 	}
-	else if (StrEqual(sWords[0], "next", false))
+	else if (StrEqual(cpMessage[0], "next", false))
 	{
 		CMD_Next(client, 0);
 	}
-	else if (StrEqual(sWords[0], "topknife", false))
+	else if (StrContains(sWords[0], "topknife", false) == 0)
 	{	
 		if (strcmp(cpMessage, "topknife") == 0)
 		{
@@ -729,10 +703,10 @@ public Action:OnSayText2(UserMsg:msg_id, Handle:bf, const clients[], numClients,
 		} 
 		else 
 		{
-			ShowTOPKnife(client, StringToInt(sWords[1]));
+			ShowTOPKnife(client, StringToInt(cpMessage[8]));
 		}
 	}
-	else if (StrEqual(sWords[0], "topnade", false))
+	else if (StrContains(sWords[0], "topnade", false) == 0)
 	{
 		if (strcmp(cpMessage, "topnade") == 0)
 		{
@@ -740,20 +714,20 @@ public Action:OnSayText2(UserMsg:msg_id, Handle:bf, const clients[], numClients,
 		}
 		else
 		{
-			ShowTOPNade(client, StringToInt(sWords[1]));
+			ShowTOPNade(client, StringToInt(cpMessage[7]));
 		}
 	}
-	else if (StrEqual(sWords[0], "topweapon", false))
+	else if (StrContains(sWords[0], "topweapon", false) == 0)
 	{
 		if (strcmp(cpMessage, "topweapon") == 0)
 		{
-			CreateTimer(0.001, Timer_TopWeaponMenu, client); // Build the menu on the next frame
+			CMD_TopWeapon(client,0); // Build the menu on the next frame
 		} 
 		else 
 		{
 			if (GetWeaponNum(sWords[1]) == 30)
 			{
-				CreateTimer(0.001, Timer_TopWeaponMenu, client); // Build the menu on the next frame
+				CMD_TopWeapon(client,0);
 			}
 			else
 			{
@@ -761,7 +735,7 @@ public Action:OnSayText2(UserMsg:msg_id, Handle:bf, const clients[], numClients,
 			}
 		}
 	}
-	else if (StrEqual(sWords[0],"top", false))
+	else if (StrContains(sWords[0],"top", false) == 0)
 	{
 		if (strcmp(cpMessage,"top") == 0)
 		{
@@ -769,30 +743,10 @@ public Action:OnSayText2(UserMsg:msg_id, Handle:bf, const clients[], numClients,
 		}
 		else
 		{
-			ShowTOP(client, StringToInt(sWords[1]));
+			ShowTOP(client, StringToInt(cpMessage[3]));
 		}
 	}
 	return Plugin_Continue;
-}
-
-public Action:Timer_HitBox(Handle:timer,any:client){
-	if(IsClientConnected(client))
-		CMD_HitBox(client,0);
-}
-
-public Action:Timer_WeaponMe(Handle:timer,any:client){
-	if(IsClientConnected(client))
-		CMD_WeaponMe(client,0);
-}
-
-public Action:Timer_Session(Handle:timer,any:client){
-	if(IsClientConnected(client))
-		CMD_Session(client,0);
-}
-
-public Action:Timer_TopWeaponMenu(Handle:timer,any:client){
-	if(IsClientConnected(client))
-		CMD_TopWeapon(client,0);
 }
 
 public GetCurrentPlayers(){

@@ -252,5 +252,11 @@
 	 => Changes: ( needed for approval ) (thanks Antithasys)
 		   = Now register properly the commands.
 		   = Changed the chat triggers.
-		   = Removed the rankme_silenttriggers cvar because we shouldn't block any chat messages.
+		   =  Removed the rankme_silenttriggers cvar because we shouldn't parse commands.
 		   = Now global variables are better named.
+= V.2.5.2 (09/25/11):
+	 => Changes:
+		   = Changed again the chat triggers. (for avoiding conflict with others plugins). (thanks GrO and Antithasys).
+	 => Fix:
+		   = Fixed statsme not showing up if player didn't have enough kills. (thanks GrO)
+		   = CVars were with wrong names. (different from the main post)

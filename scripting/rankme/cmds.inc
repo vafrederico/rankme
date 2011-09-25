@@ -885,91 +885,102 @@ public SQL_StatsMeCallback(Handle:owner, Handle:hndl, const String:error[], any:
 	g_TotalPlayers =SQL_GetRowCount(hndl);
 	new String:Auth_receive[32];
 	new String:Name_receive[MAX_NAME_LENGTH];
-	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
-	{
-		i++;
-		SQL_FetchString(hndl,1,Auth_receive,32);
+	
+	if(g_aStats[client][KILLS] >= g_MinimalKills){
 		
-		SQL_FetchString(hndl,2,Name_receive,MAX_NAME_LENGTH);
-		
-		if((g_bRankByName && StrEqual(name,Name_receive)) || (!g_bRankByName && StrEqual(Auth_receive,auth,false))){
-			new Handle:panel = CreateMenuEx(_,MenuHandler_DoNothing,MENU_ACTIONS_ALL);
-			new String:text[255];
-			SetMenuPagination(panel,4);
-			new ikills = g_aStats[client][KILLS];
-			new ideaths=g_aStats[client][DEATHS];
-			new deaths;
-			if(ideaths == 0)
-				deaths = 1;
-			else 
-				deaths=ideaths;
-			new Float:kills = IntToFloat(ikills);
-			new shots;
-			if(g_aStats[client][SHOTS] == 0)
-				shots = 1;
-			else
-				shots = g_aStats[client][SHOTS];
-			new String:temp[255];
-			Format(temp,sizeof(temp),"- %T\n","BasicStats",client);
-			StrCat(text,255,temp);
-			Format(temp,sizeof(temp),"Rank: %i/%i   %T: %i [%i]\n",i,SQL_GetRowCount(hndl),"Points",client,g_aStats[client][SCORE],g_aSession[client][SCORE]);
-			StrCat(text,255,temp);
-			Format(temp,255,"%T   KDR: %.2f\n","KillsDeaths",client,ikills,ideaths,kills/deaths);
-			StrCat(text,255,temp);
-			Format(temp,255,"Headshots: %d   %T: %d   TKs: %d\n ",g_aStats[client][HEADSHOTS],"Suicides",client,g_aStats[client][SUICIDES],g_aStats[client][TK]);
-			StrCat(text,255,temp);
-			AddMenuItem(panel,"",text);
-			text="";
+		while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
+		{
+			i++;
+			SQL_FetchString(hndl,1,Auth_receive,32);
 			
-			Format(temp,sizeof(temp),"- %T\n","RoundStats",client);
-			StrCat(text,255,temp);
-			Format(temp,255,"%T: %d/%d   %T: %d/%d\n ","TRWins",client,g_aStats[client][TR_WIN],g_aStats[client][ROUNDS_TR],"CTWins",client,g_aStats[client][CT_WIN],g_aStats[client][ROUNDS_CT]);
-			StrCat(text,255,temp);
-			AddMenuItem(panel,"",text);
-			text="";
+			SQL_FetchString(hndl,2,Name_receive,MAX_NAME_LENGTH);
 			
-			Format(temp,sizeof(temp),"- %T\n","HitStats",client);
-			StrCat(text,255,temp);
-			Format(temp,255,"%T: %d   %T: %d   %T: %.2f%%\n ","Shots",client,shots,"Hits",client,g_aStats[client][HITS],"Accuracy",client,IntToFloat(g_aStats[client][HITS])/shots*100);
-			StrCat(text,255,temp);
-			AddMenuItem(panel,"",text);
-			text="";
-			
-			Format(temp,sizeof(temp),"- %T\n","BombHostagesStats",client);
-			StrCat(text,255,temp);
-			Format(temp,255,"%T: %d   %T: %d   %T: %d\n","PlantedBombs",client,g_aStats[client][C4_PLANTED],"ExplodedBombs",client,g_aStats[client][C4_EXPLODED],"DefusedBombs",client,g_aStats[client][C4_DEFUSED]);
-			StrCat(text,255,temp);
-			Format(temp,255,"%T: %d","RescuedHostages",client,g_aStats[client][HOSTAGES_RESCUED]);
-			StrCat(text,255,temp);
-			AddMenuItem(panel,"",text);
-			text="";
-						
-			if(g_bVipEnabled){
-				Format(temp,sizeof(temp),"- %T\n","VIPStats",client);
-				StrCat(text,255,temp);
-				Format(temp,255,"%T: %d/%d   %T: %d\n ","VIPEscapes",client,g_aStats[client][VIP_ESCAPED],g_aStats[client][VIP_PLAYED],"VIPsKilled",client,g_aStats[client][VIP_KILLED]);
-				StrCat(text,255,temp);
-				AddMenuItem(panel,"",text);
-				text="";
-			}
-			
-			Format(temp,sizeof(temp),"- %T\n","OtherStats",client);
-			StrCat(text,255,temp);
-			new time = g_aStats[client][CONNECTED] + GetTime()-g_aSession[client][CONNECTED];
-			new hours = RoundToFloor(time/3600.0);
-			time = time-(hours*3600);
-			
-			new minutes = RoundToFloor(time/60.0);
-			time = time-(minutes*60);
-			
-			Format(temp,255,"%T","TimeConnected",client,hours,minutes,time);
-			StrCat(text,255,temp);
-			AddMenuItem(panel,"",text);
-			text="";
-			DisplayMenu(panel,client,MENU_TIME_FOREVER);
-			
+			if((g_bRankByName && StrEqual(name,Name_receive)) || (!g_bRankByName && StrEqual(Auth_receive,auth,false)))
+				break;
 		}
+	} else {
+		i = 0;
 	}
+	new Handle:panel = CreateMenuEx(_,MenuHandler_DoNothing,MENU_ACTIONS_ALL);
+	new String:text[255];
+	SetMenuPagination(panel,4);
+	new ikills = g_aStats[client][KILLS];
+	new ideaths=g_aStats[client][DEATHS];
+	new deaths;
+	if(ideaths == 0)
+		deaths = 1;
+	else 
+		deaths=ideaths;
+	new Float:kills = IntToFloat(ikills);
+	new shots;
+	if(g_aStats[client][SHOTS] == 0)
+		shots = 1;
+	else
+		shots = g_aStats[client][SHOTS];
+	new String:temp[255];
+	Format(temp,sizeof(temp),"- %T\n","BasicStats",client);
+	StrCat(text,255,temp);
+	if(i == 0)
+		Format(temp,sizeof(temp),"%T: %i [%i]\n","Points",client,g_aStats[client][SCORE],g_aSession[client][SCORE]);
+	else
+		Format(temp,sizeof(temp),"Rank: %i/%i   %T: %i [%i]\n",i,SQL_GetRowCount(hndl),"Points",client,g_aStats[client][SCORE],g_aSession[client][SCORE]);
+	StrCat(text,255,temp);
+	Format(temp,255,"%T   KDR: %.2f\n","KillsDeaths",client,ikills,ideaths,kills/deaths);
+	StrCat(text,255,temp);
+	Format(temp,255,"Headshots: %d   %T: %d   TKs: %d\n ",g_aStats[client][HEADSHOTS],"Suicides",client,g_aStats[client][SUICIDES],g_aStats[client][TK]);
+	StrCat(text,255,temp);
+	AddMenuItem(panel,"",text);
+	text="";
+	
+	Format(temp,sizeof(temp),"- %T\n","RoundStats",client);
+	StrCat(text,255,temp);
+	Format(temp,255,"%T: %d/%d   %T: %d/%d\n ","TRWins",client,g_aStats[client][TR_WIN],g_aStats[client][ROUNDS_TR],"CTWins",client,g_aStats[client][CT_WIN],g_aStats[client][ROUNDS_CT]);
+	StrCat(text,255,temp);
+	AddMenuItem(panel,"",text);
+	text="";
+	
+	Format(temp,sizeof(temp),"- %T\n","HitStats",client);
+	StrCat(text,255,temp);
+	Format(temp,255,"%T: %d   %T: %d   %T: %.2f%%\n ","Shots",client,shots,"Hits",client,g_aStats[client][HITS],"Accuracy",client,IntToFloat(g_aStats[client][HITS])/shots*100);
+	StrCat(text,255,temp);
+	AddMenuItem(panel,"",text);
+	text="";
+	
+	Format(temp,sizeof(temp),"- %T\n","BombHostagesStats",client);
+	StrCat(text,255,temp);
+	Format(temp,255,"%T: %d   %T: %d   %T: %d\n","PlantedBombs",client,g_aStats[client][C4_PLANTED],"ExplodedBombs",client,g_aStats[client][C4_EXPLODED],"DefusedBombs",client,g_aStats[client][C4_DEFUSED]);
+	StrCat(text,255,temp);
+	Format(temp,255,"%T: %d","RescuedHostages",client,g_aStats[client][HOSTAGES_RESCUED]);
+	StrCat(text,255,temp);
+	AddMenuItem(panel,"",text);
+	text="";
+				
+	if(g_bVipEnabled){
+		Format(temp,sizeof(temp),"- %T\n","VIPStats",client);
+		StrCat(text,255,temp);
+		Format(temp,255,"%T: %d/%d   %T: %d\n ","VIPEscapes",client,g_aStats[client][VIP_ESCAPED],g_aStats[client][VIP_PLAYED],"VIPsKilled",client,g_aStats[client][VIP_KILLED]);
+		StrCat(text,255,temp);
+		AddMenuItem(panel,"",text);
+		text="";
+	}
+	
+	Format(temp,sizeof(temp),"- %T\n","OtherStats",client);
+	StrCat(text,255,temp);
+	new time = g_aStats[client][CONNECTED] + GetTime()-g_aSession[client][CONNECTED];
+	new hours = RoundToFloor(time/3600.0);
+	time = time-(hours*3600);
+	
+	new minutes = RoundToFloor(time/60.0);
+	time = time-(minutes*60);
+	
+	Format(temp,255,"%T","TimeConnected",client,hours,minutes,time);
+	StrCat(text,255,temp);
+	AddMenuItem(panel,"",text);
+	text="";
+	DisplayMenu(panel,client,MENU_TIME_FOREVER);
+			
+		
+	
 }
 
 public PanelNoHandle(Handle:menu, MenuAction:action, param1, param2){
