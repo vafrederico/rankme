@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.5.2"
+#define PLUGIN_VERSION "2.5.3"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -667,7 +667,8 @@ public Action:OnSayText(client, const String:command[], argc)
 	decl String:cpMessage[256];
 	decl String:sWords[64][256];
 	GetCmdArgString(cpMessage,sizeof(cpMessage)); // Get the message
-	ReplaceString(cpMessage,sizeof(cpMessage),"\"",""); // Text come inside quotes
+	StripQuotes(cpMessage); // Text come inside quotes
+	//ReplaceString(cpMessage,sizeof(cpMessage),"\"","");
 	ExplodeString(cpMessage, " ", sWords, sizeof(sWords), sizeof(sWords[])); // Explode it for use at top, topknife, topnade and topweapon
 
 	// Proccess the text

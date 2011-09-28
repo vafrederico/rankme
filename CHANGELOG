@@ -252,7 +252,7 @@
 	 => Changes: ( needed for approval ) (thanks Antithasys)
 		   = Now register properly the commands.
 		   = Changed the chat triggers.
-		   =  Removed the rankme_silenttriggers cvar because we shouldn't parse commands.
+		   = Removed the rankme_silenttriggers cvar because we shouldn't parse commands.
 		   = Now global variables are better named.
 = V.2.5.2 (09/25/11):
 	 => Changes:
@@ -260,3 +260,7 @@
 	 => Fix:
 		   = Fixed statsme not showing up if player didn't have enough kills. (thanks GrO)
 		   = CVars were with wrong names. (different from the main post)
+= V.2.5.3 (09/28/11):
+	 => Fix:
+		   = Now using the correct past form of reset. (thanks Fearts)
+		   = Fixed the top not backing to first page if was called from top 10. (thanks siangc)

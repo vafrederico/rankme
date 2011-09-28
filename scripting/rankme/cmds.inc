@@ -38,7 +38,7 @@ public Action:CMD_ResetRank(client,args){
 		Format(query,sizeof(query),"DELETE FROM rankme WHERE steam='%s'",arg1);
 	}
 	SQL_TQuery(g_hStatsDb,SQL_NothingCallback,query);
-	LogAction(client,-1,"[RankMe]: Reseted rank (%s)",arg1);
+	LogAction(client,-1,"[RankMe]: Rank has been reset (%s)",arg1);
 	new String:auth[64];
 	for(new i=1;i<=MaxClients;i++){
 		if(IsClientInGame(i)){
@@ -50,7 +50,7 @@ public Action:CMD_ResetRank(client,args){
 		
 		}
 	}
-	ReplyToCommand(client,"[RankMe]: Reseted");
+	ReplyToCommand(client,"[RankMe]: The rank has been reset");
 	return Plugin_Handled;
 }
 
@@ -60,13 +60,13 @@ public Action:CMD_ResetRankAll(client,args){
 	
 	SQL_TQuery(g_hStatsDb,SQL_NothingCallback,"DELETE FROM rankme WHERE 1=1");
 	
-	LogAction(client,-1,"[RankMe]: All rank data has been reseted");
+	LogAction(client,-1,"[RankMe]: All rank data has been reset");
 	
 	for(new i=1;i<=MaxClients;i++){
 		if(IsClientInGame(i))
 			OnClientPutInServer(i);
 	}
-	ReplyToCommand(client,"[RankMe]: All rank data has been reseted");
+	ReplyToCommand(client,"[RankMe]: All rank data has been reset");
 	return Plugin_Handled;
 }
 
@@ -159,7 +159,6 @@ ShowTOPWeapon(client,weapon,at){
 		
 	}	else {
 		WritePackCell(Datapack,0);
-		
 	}
 	new String:query[200];
 	if(g_bRankBots && g_bShowBotsOnRank)
@@ -241,6 +240,8 @@ public MenuHandler_TopWeapon(Handle:menu, MenuAction:action, param1, param2){
 		ExplodeString(temp,";",v,2,5);
 		if(StringToInt(v[1]) >= 0){
 			ShowTOPWeapon(param1,StringToInt(v[0]),StringToInt(v[1])+1);
+		} else {
+			ShowTOPWeapon(param1,StringToInt(v[0]),0);
 		}
 	}
 	if (action == MenuAction_End)
@@ -274,10 +275,8 @@ ShowTOP(client,at){
 	
 	if(at>0){
 		WritePackCell(Datapack,at-1);
-		
 	}	else {
 		WritePackCell(Datapack,0);
-		
 	}
 	new String:query[200];
 	if(g_bRankBots && g_bShowBotsOnRank)
@@ -365,6 +364,8 @@ public MenuHandler_Top(Handle:menu, MenuAction:action, param1, param2){
 		GetMenuItem(menu, param2, temp, sizeof(temp));
 		if(StringToInt(temp) >= 0){
 			ShowTOP(param1,StringToInt(temp)+1);
+		} else {
+			ShowTOP(param1,0);
 		}
 	}
 	if (action == MenuAction_End)
@@ -398,10 +399,8 @@ ShowTOPKnife(client,at){
 	
 	if(at>0){
 		WritePackCell(Datapack,at-1);
-		
 	}	else {
 		WritePackCell(Datapack,0);
-		
 	}
 	new String:query[200];
 	if(g_bRankBots && g_bShowBotsOnRank)
@@ -480,6 +479,8 @@ public MenuHandler_TopKnife(Handle:menu, MenuAction:action, param1, param2){
 		GetMenuItem(menu, param2, temp, sizeof(temp));
 		if(StringToInt(temp) >= 0){
 			ShowTOPKnife(param1,StringToInt(temp)+1);
+		} else {
+			ShowTOPKnife(param1,0);
 		}
 	}
 	if (action == MenuAction_End)
@@ -513,10 +514,8 @@ ShowTOPNade(client,at){
 	
 	if(at>0){
 		WritePackCell(Datapack,at-1);
-		
 	}	else {
 		WritePackCell(Datapack,0);
-		
 	}
 	new String:query[200];
 	if(g_bRankBots && g_bShowBotsOnRank)
@@ -594,6 +593,8 @@ public MenuHandler_TopNade(Handle:menu, MenuAction:action, param1, param2){
 		GetMenuItem(menu, param2, temp, sizeof(temp));
 		if(StringToInt(temp) >= 0){
 			ShowTOPNade(param1,StringToInt(temp)+1);
+		} else {
+			ShowTOPNade(param1,0);
 		}
 	}
 	if (action == MenuAction_End)
