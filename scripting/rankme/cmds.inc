@@ -766,7 +766,7 @@ public Action:CMD_HitBox(client,args){
 	new String:temp[255];
 	new ihits;
 	new Float:hits;
-	ihits = g_aStats[client][HITS];
+	ihits = g_aHitBox[client][1]+g_aHitBox[client][2]+g_aHitBox[client][3]+g_aHitBox[client][4]+g_aHitBox[client][5]+g_aHitBox[client][6]+g_aHitBox[client][7];
 	new String:text[255];
 	if(ihits == 0)
 		hits= 1.0;

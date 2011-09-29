@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.5.3"
+#define PLUGIN_VERSION "2.5.4"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -113,6 +113,11 @@ new g_TotalPlayers;
 new bool:DEBUGGING=false;
 new g_C4PlantedBy;
 new String:g_sC4PlantedByName[MAX_NAME_LENGTH];
+
+// Preventing duplicates
+new String:g_aClientSteam[MAXPLAYERS+1][64]; 
+new String:g_aClientName[MAXPLAYERS+1][MAX_NAME_LENGTH];
+
 #include rankme/cmds
 
 public Plugin:myinfo = {
@@ -680,7 +685,7 @@ public Action:OnSayText(client, const String:command[], argc)
 	{
 		CMD_StatsMe(client, 0);
 	}
-	else if (StrEqual(cpMessage, "hitbox", false))
+	else if (StrEqual(cpMessage, "hitboxme", false))
 	{
 		CMD_HitBox(client,0);
 	}
@@ -1278,11 +1283,11 @@ public OnClientPutInServer(client){
 	
 	new String:name[256];
 	GetClientName(client, name, sizeof(name));
-	//SQL_EscapeString(g_hStatsDb,name,name,sizeof(name));
+	strcopy(g_aClientName[client],MAX_NAME_LENGTH,name);
 	ReplaceString(name, sizeof(name), "'", "");
-	new String:auth[32];
+	new String:auth[64];
 	GetClientAuthString(client,auth,sizeof(auth));
-	
+	strcopy(g_aClientSteam[client],64,auth);
 	new String:query[500];
 	if(g_bRankByName)
 		Format(query,sizeof(query),g_sSqlRetrieveClientName,name);
@@ -1306,6 +1311,18 @@ public SQL_LoadPlayerCallback(Handle:owner, Handle:hndl, const String:error[], a
 	}
 	if(!IsClientInGame(client))
 		return;
+		
+	if(g_bRankByName){
+		new String:name[256];
+		GetClientName(client, name, sizeof(name));
+		if(!StrEqual(name,g_aClientName[client]))
+			return;
+	} else {
+		new String:auth[64];
+		GetClientAuthString(client,auth,sizeof(auth));
+		if(!StrEqual(auth,g_aClientSteam[client]))
+			return;
+	}
 	if(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
 	{
 		for(new i=0;i<=10;i++){
