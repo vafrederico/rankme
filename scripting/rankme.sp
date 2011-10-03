@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.5.4"
+#define PLUGIN_VERSION "2.5.5"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -27,6 +27,7 @@ new Handle:g_cvarEnabled;
 new Handle:g_cvarChatChange;
 new Handle:g_cvarRankbots;
 new Handle:g_cvarAutopurge;
+new Handle:g_cvarDumpDB;
 new Handle:g_cvarPointsBombDefusedTeam;
 new Handle:g_cvarPointsBombDefusedPlayer;
 new Handle:g_cvarPointsBombPlantedTeam;
@@ -75,6 +76,7 @@ new bool:g_bVipEnabled;
 new bool:g_bShowBotsOnRank;
 new bool:g_bFfa;
 new bool:g_bMysql;
+new bool:g_bDumpDB;
 new g_PointsBombDefusedTeam;
 new g_PointsBombDefusedPlayer;
 new g_PointsBombPlantedTeam;
@@ -171,7 +173,7 @@ public OnPluginStart(){
 	g_cvarRankByName = CreateConVar("rankme_rank_by_name","0","Rank players by name? 1 = true 0 = false",_,true,0.0,true,1.0);
 	g_cvarFfa = CreateConVar("rankme_ffa","0","FFA mode? 1 = true 0 = false",_,true,0.0,true,1.0);
 	g_cvarMysql = CreateConVar("rankme_mysql","0","Using MySQL? 1 = true 0 = false (SQLite)",_,true,0.0,true,1.0);
-	
+	g_cvarDumpDB = CreateConVar("rankme_dump_db","0","Dump the Database to SQL file? (required to be 1 if using the web interface and SQLite, case MySQL, it won't be dumped) 1 = true 0 = false",_,true,0.0,true,1.0);
 	// LOAD RANKME.CFG
 	AutoExecConfig(true,"rankme");
 	
@@ -215,8 +217,9 @@ public OnPluginStart(){
 	HookConVarChange(g_cvarPointsLoseSuicide,OnConVarChanged);
 	HookConVarChange(g_cvarRankByName,OnConVarChanged);
 	HookConVarChange(g_cvarFfa,OnConVarChanged);
+	HookConVarChange(g_cvarDumpDB,OnConVarChanged);
 	HookConVarChange(g_cvarMysql,OnConVarChanged_MySQL);
-		
+	
 	// LOAD TRANSLATIONS
 	LoadTranslations("rankme.phrases");
 	
@@ -318,6 +321,7 @@ public OnConfigsExecuted(){
 	g_bShowRankAll = GetConVarBool(g_cvarShowRankAll);
 	g_bRankBots = GetConVarBool(g_cvarRankbots);
 	g_bFfa = GetConVarBool(g_cvarFfa);
+	g_bDumpDB = GetConVarBool(g_cvarDumpDB);
 	g_PointsBombDefusedTeam = GetConVarInt(g_cvarPointsBombDefusedTeam);
 	g_PointsBombDefusedPlayer = GetConVarInt(g_cvarPointsBombDefusedPlayer);
 	g_PointsBombPlantedTeam = GetConVarInt(g_cvarPointsBombPlantedTeam);
@@ -606,7 +610,8 @@ public Native_GetHitbox(Handle:plugin, numParams)
 
 
 public DumpDB(){
-	SQL_TQuery(g_hStatsDb,SQL_DumpCallback,"SELECT * from rankme");
+	if(!g_bDumpDB || g_bMysql)
+		SQL_TQuery(g_hStatsDb,SQL_DumpCallback,"SELECT * from rankme");
 }
 
 public Action:OnClientChangeName(Handle:event, const String:name[], bool:dontBroadcast)
@@ -1466,6 +1471,9 @@ public OnConVarChanged(Handle:convar, const String:oldValue[], const String:newV
 	}
 	else if (convar == g_cvarFfa){
 		g_bFfa = GetConVarBool(g_cvarFfa);
+	}
+	else if (convar == g_cvarDumpDB){
+		g_bDumpDB = GetConVarBool(g_cvarDumpDB);
 	}
 	else if (convar == g_cvarPointsBombDefusedTeam){
 		g_PointsBombDefusedTeam = GetConVarInt(g_cvarPointsBombDefusedTeam);

@@ -4,6 +4,42 @@
 	{
 		"fr"		"Meurtres"
 	}
+	"LostSuicide"
+	{
+		"fr"		"{lightgreen}{1}{default} ({2}) a perdu {3} point(s) pour Suicide."
+	}
+	"LostTK"
+	{
+		"fr"		"{lightgreen}{1}{default} ({2}) a perdu {3} point(s) pour avoir Team Killé {lightgreen}{4}"
+	}
+	"VIPStats"
+	{
+		"fr"		"statistiques VIP"
+	}
+	"VIPEscapes"
+	{
+		"fr"		"s'échappe en tant que VIP"
+	}
+	"VIPsKilled"
+	{
+		"fr"		"VIPs tué(s)"
+	}
+	"CT_VIPEscaped"
+	{
+		"fr"		"{lightgreen}Les Contre-Terroristes{default} ont obtenu {1} points pour avoir permis la fuite du VIP."
+	}
+	"VIPEscaped"
+	{
+		"fr"		"{lightgreen}{1}{default} ({2}) a obtenu {3} points pour s'être échappé en tant que VIP."
+	}
+	"TR_VIPKilled"
+	{
+		"fr"		"{lightgreen}Les Terroristes{default} ont obtenu {1} points pour avoir tué le VIP."
+	}
+	"VIPKilled"
+	{
+		"fr"		"{lightgreen}{1}{default} ({2}) a obtenu {3} points pour avoir tué le VIP."
+	}
 	"GotPointsBy"
 	{
 		"fr"		"{lightgreen}{1}{default} ({2}) gagne {3} point(s) pour {4}."

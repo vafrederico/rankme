@@ -269,3 +269,9 @@
 		   = Fixed hitboxme not being triggered from the chat. (was being triggered by hitbox) (thanks GrO)
 		   = Fixed hitboxme showing wrong hits values. (thanks GrO)
 		   = Added a check for preveting the creation duplicates. (thanks banania)
+= V.2.5.5 (10/03/11):
+	 => Fix:
+		   = Updated FR translation. (thanks Zirconium)
+		   = Added CVar "rankme_dump_db" for enabling/disabling the SQL database. (thanks banania)
+		   (please delete rankme.cfg before updating the plugin for showing the
+		  new cvar. Also, as the translation has changed, needs map change).
