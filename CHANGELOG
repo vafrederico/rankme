@@ -275,3 +275,7 @@
 		   = Added CVar "rankme_dump_db" for enabling/disabling the SQL database. (thanks banania)
 		   (please delete rankme.cfg before updating the plugin for showing the
 		  new cvar. Also, as the translation has changed, needs map change).
+= V.2.5.6 (10/04/11):
+	 => Fix:
+		   = Optimized Round End event.
+		   = DumpDB occurring on wrong times. (bad check)

@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.5.5"
+#define PLUGIN_VERSION "2.5.6"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -611,7 +611,8 @@ public Native_GetHitbox(Handle:plugin, numParams)
 
 public DumpDB(){
 	if(!g_bDumpDB || g_bMysql)
-		SQL_TQuery(g_hStatsDb,SQL_DumpCallback,"SELECT * from rankme");
+		return;
+	SQL_TQuery(g_hStatsDb,SQL_DumpCallback,"SELECT * from rankme");
 }
 
 public Action:OnClientChangeName(Handle:event, const String:name[], bool:dontBroadcast)
@@ -909,13 +910,14 @@ public Action: Event_RoundEnd(Handle:event, const String:name[], bool:dontBroadc
 	if(!g_bEnabled || g_MinimumPlayers > GetCurrentPlayers()) 
 		return;
 	new i;
+	new Winner = GetEventInt(event,"winner");
 	new bool:announced=false;
 	for(i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i)){
 			if(!g_bRankBots && IsFakeClient(i)) 
 				return;
-			if(GetEventInt(event,"winner") == TR && GetClientTeam(i)==TR){
+			if(Winner == TR && GetClientTeam(i)==TR){
 				g_aSession[i][TR_WIN]++;
 				g_aStats[i][TR_WIN]++;
 				if(g_PointsRoundWin[TR] >0 && IsPlayerAlive(i)){
@@ -926,7 +928,7 @@ public Action: Event_RoundEnd(Handle:event, const String:name[], bool:dontBroadc
 						announced=true;
 					}
 				}
-			} else if((GetEventInt(event,"winner") == CT && GetClientTeam(i)==CT)){
+			} else if(Winner == CT && GetClientTeam(i)==CT){
 				g_aSession[i][CT_WIN]++;
 				g_aStats[i][CT_WIN]++;
 				if(g_PointsRoundWin[CT] >0 && IsPlayerAlive(i)){
