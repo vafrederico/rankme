@@ -24,16 +24,16 @@ stock Array_FindHighestValue(any:array[], size, start=0){
 
 public Action:CMD_ResetRank(client,args){
 	if(!g_bEnabled) 
-		return Plugin_Continue;
+		return Plugin_Handled;
 	new String:arg1[64];
-	
 	GetCmdArg(1,arg1,sizeof(arg1));
-	
+	new String:sEscapeArg1[129];
+	SQL_EscapeString(g_hStatsDb,arg1,sEscapeArg1,sizeof(sEscapeArg1));
 	//ReplaceString(arg1,sizeof(arg1)," ","");
-	ReplaceString(arg1,sizeof(arg1),"\"","");
+	//ReplaceString(arg1,sizeof(arg1),"\"","");
 	new String:query[100];
 	if(g_bRankByName){
-		Format(query,sizeof(query),"DELETE FROM rankme WHERE name='%s'",arg1);
+		Format(query,sizeof(query),"DELETE FROM rankme WHERE name='%s'",sEscapeArg1);
 	} else {
 		Format(query,sizeof(query),"DELETE FROM rankme WHERE steam='%s'",arg1);
 	}
@@ -56,7 +56,7 @@ public Action:CMD_ResetRank(client,args){
 
 public Action:CMD_ResetRankAll(client,args){
 	if(!g_bEnabled) 
-		return Plugin_Continue;
+		return Plugin_Handled;
 	
 	SQL_TQuery(g_hStatsDb,SQL_NothingCallback,"DELETE FROM rankme WHERE 1=1");
 	
@@ -72,13 +72,14 @@ public Action:CMD_ResetRankAll(client,args){
 
 public Action:CMD_Purge(client,args){
 	if(!g_bEnabled) 
-		return Plugin_Continue;
+		return Plugin_Handled;
 	new String:arg1[64];
 	
 	GetCmdArg(1,arg1,sizeof(arg1));
-	
-	ReplaceString(arg1,sizeof(arg1)," ","");
-	ReplaceString(arg1,sizeof(arg1),"\"","");
+	new String:sEscapeArg1[129];
+	SQL_EscapeString(g_hStatsDb,arg1,sEscapeArg1,sizeof(sEscapeArg1));
+	//ReplaceString(arg1,sizeof(arg1)," ","");
+	//ReplaceString(arg1,sizeof(arg1),"\"","");
 	
 	new deletebefore;
 	if(StringToInt(arg1) == 0){
@@ -105,9 +106,8 @@ public SQL_GetPlayersCallback(Handle:owner, Handle:hndl, const String:error[], a
 }
 
 public Action:CMD_TopWeapon(client,args){
-	if(!g_bEnabled) 
-		return Plugin_Continue;
-	if(client == 0 || !IsClientInGame(client))
+	
+	if(!g_bEnabled || client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 	if(args > 0){
 		new String:arg1[20];
@@ -159,6 +159,7 @@ ShowTOPWeapon(client,weapon,at){
 		
 	}	else {
 		WritePackCell(Datapack,0);
+		at = 1; // For not needing to build twice the query. (for at > 0 and at <= 0)
 	}
 	new String:query[200];
 	if(g_bRankBots && g_bShowBotsOnRank)
@@ -251,9 +252,7 @@ public MenuHandler_TopWeapon(Handle:menu, MenuAction:action, param1, param2){
 }
 
 public Action:CMD_Top(client,args){
-	if(!g_bEnabled) 
-		return Plugin_Continue;
-	if(client == 0 || !IsClientInGame(client))
+	if(!g_bEnabled || client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 	
 	new String:arg1[5];
@@ -277,6 +276,7 @@ ShowTOP(client,at){
 		WritePackCell(Datapack,at-1);
 	}	else {
 		WritePackCell(Datapack,0);
+		at = 1; // For not needing to build twice the query. (for at > 0 and at <= 0)
 	}
 	new String:query[200];
 	if(g_bRankBots && g_bShowBotsOnRank)
@@ -375,9 +375,7 @@ public MenuHandler_Top(Handle:menu, MenuAction:action, param1, param2){
 }
 
 public Action:CMD_TopKnife(client,args){
-	if(!g_bEnabled) 
-		return Plugin_Continue;
-	if(client == 0 || !IsClientInGame(client))
+	if(!g_bEnabled || client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 
 	new String:arg1[5];
@@ -401,6 +399,7 @@ ShowTOPKnife(client,at){
 		WritePackCell(Datapack,at-1);
 	}	else {
 		WritePackCell(Datapack,0);
+		at = 1; // For not needing to build twice the query. (for at > 0 and at <= 0)
 	}
 	new String:query[200];
 	if(g_bRankBots && g_bShowBotsOnRank)
@@ -490,9 +489,7 @@ public MenuHandler_TopKnife(Handle:menu, MenuAction:action, param1, param2){
 }
 
 public Action:CMD_TopNade(client,args){
-	if(!g_bEnabled) 
-		return Plugin_Continue;
-	if(client == 0 || !IsClientInGame(client))
+	if(!g_bEnabled || client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 
 	new String:arg1[5];
@@ -516,6 +513,7 @@ ShowTOPNade(client,at){
 		WritePackCell(Datapack,at-1);
 	}	else {
 		WritePackCell(Datapack,0);
+		at = 1; // For not needing to build twice the query. (for at > 0 and at <= 0)
 	}
 	new String:query[200];
 	if(g_bRankBots && g_bShowBotsOnRank)
@@ -611,9 +609,7 @@ public MenuHandler_DoNothing(Handle:menu, MenuAction:action, param1, param2){
 }
 
 public Action:CMD_Rank(client,args){
-	if(!g_bEnabled) 
-		return Plugin_Continue;
-	if(client == 0 || !IsClientInGame(client))
+	if(!g_bEnabled || client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 	
 	if(g_aStats[client][KILLS] < g_MinimalKills){
@@ -672,9 +668,7 @@ public SQL_RankCallback(Handle:owner, Handle:hndl, const String:error[], any:cli
 }
 
 public Action:CMD_Session(client,args){
-	if(!g_bEnabled) 
-		return Plugin_Continue;
-	if(client == 0 || !IsClientInGame(client))
+	if(!g_bEnabled || client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 	new Handle:panel = CreateMenuEx(_,MenuHandler_DoNothing,MENU_ACTIONS_ALL);
 	new String:text[255];
@@ -757,9 +751,7 @@ public Action:CMD_Session(client,args){
 }
 
 public Action:CMD_HitBox(client,args){
-	if(!g_bEnabled) 
-		return Plugin_Continue;
-	if(client == 0 || !IsClientInGame(client))
+	if(!g_bEnabled || client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 
 	new Handle:panel = CreateMenuEx(_,MenuHandler_DoNothing,MENU_ACTIONS_ALL);
@@ -797,9 +789,7 @@ public Action:CMD_HitBox(client,args){
 }
 
 public Action:CMD_WeaponMe(client,args){
-	if(!g_bEnabled) 
-		return Plugin_Continue;
-	if(client == 0 || !IsClientInGame(client))
+	if(!g_bEnabled || client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 	new weapons_a[28];
 	for(new a=0;a<=27;a++){
@@ -855,10 +845,7 @@ public Action:CMD_WeaponMe(client,args){
 }
 
 public Action:CMD_StatsMe(client,args){
-	if(!g_bEnabled) 
-		return Plugin_Continue;
-	
-	if(client == 0 || !IsClientInGame(client))
+	if(!g_bEnabled || client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 	new String:query[500];
 	if(g_bRankBots && g_bShowBotsOnRank)
@@ -991,9 +978,7 @@ public PanelNoHandle(Handle:menu, MenuAction:action, param1, param2){
 }
 
 public Action:CMD_Next(client,args){
-	if(!g_bEnabled) 
-		return Plugin_Continue;
-	if(client == 0 || !IsClientInGame(client))
+	if(!g_bEnabled || client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 	new String:query[500];
 	if(g_bRankBots && g_bShowBotsOnRank)
@@ -1083,15 +1068,15 @@ public SQL_NextCallback(Handle:owner, Handle:hndl, const String:error[], any:cli
 
 public Action:CMD_ResetOwnRank(client,args){
 
-	if(!g_bEnabled || !g_bResetOwnRank) 
-		return Plugin_Continue;
-	if(client == 0 || !IsClientInGame(client))
+	if(!g_bEnabled || !g_bResetOwnRank || client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
-	new String:param[64];
+	new String:param[MAX_NAME_LENGTH];
 	new String:query[100];
 	if(g_bRankByName){
 		GetClientName(client,param,sizeof(param));
-		Format(query,sizeof(query),"DELETE FROM rankme WHERE name='%s'",param);
+		new String:sEscape[MAX_NAME_LENGTH*2+1];
+		SQL_EscapeString(g_hStatsDb,param,sEscape,sizeof(sEscape));
+		Format(query,sizeof(query),"DELETE FROM rankme WHERE name='%s'",sEscape);
 	} else {
 		GetClientAuthString(client,param,sizeof(param));
 		Format(query,sizeof(query),"DELETE FROM rankme WHERE steam='%s'",param);

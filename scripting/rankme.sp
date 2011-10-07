@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.5.6"
+#define PLUGIN_VERSION "2.5.7"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -602,7 +602,7 @@ public Native_GetHitbox(Handle:plugin, numParams)
 {
 	new iClient = GetNativeCell(1);
 	new array[8];
-	for(new i=0;i<28;i++)
+	for(new i=0;i<8;i++)
 		array[i] = g_aHitBox[iClient][i];
 	
 	SetNativeArray(2,array,8);
@@ -778,16 +778,17 @@ public OnPluginEnd(){
 		if(IsClientInGame(client)){
 			if(!g_bRankBots && IsFakeClient(client)) 
 				return;
-			new String:name[256];
+			new String:name[MAX_NAME_LENGTH];
 			GetClientName(client, name, sizeof(name));
-			//SQL_EscapeString(g_hStatsDb,name,name,sizeof(name));
+			new String:sEscapeName[MAX_NAME_LENGTH*2+1];
+			SQL_EscapeString(g_hStatsDb,name,sEscapeName,sizeof(sEscapeName));
 			new String:auth[32];
 			GetClientAuthString(client,auth,sizeof(auth));
 			
 			new String:ip[32];
 			GetClientIP(client,ip,sizeof(ip));
 			// Make SQL-safe
-			ReplaceString(name, sizeof(name), "'", "");
+			//ReplaceString(name, sizeof(name), "'", "");
 
 			
 			new String:weapons_query[500] = "";
@@ -797,7 +798,7 @@ public OnPluginEnd(){
 			new String:query[1500];
 		
 			Format(query,sizeof(query),g_sSqlSave,g_aStats[client][SCORE],g_aStats[client][KILLS],g_aStats[client][DEATHS],g_aStats[client][SUICIDES],g_aStats[client][TK],
-			g_aStats[client][SHOTS],g_aStats[client][HITS],g_aStats[client][HEADSHOTS],g_aStats[client][ROUNDS_TR],g_aStats[client][ROUNDS_CT],ip,name,weapons_query,
+			g_aStats[client][SHOTS],g_aStats[client][HITS],g_aStats[client][HEADSHOTS],g_aStats[client][ROUNDS_TR],g_aStats[client][ROUNDS_CT],ip,sEscapeName,weapons_query,
 			g_aHitBox[client][1],g_aHitBox[client][2],g_aHitBox[client][3],g_aHitBox[client][4],g_aHitBox[client][5],g_aHitBox[client][6],g_aHitBox[client][7],g_aStats[client][C4_PLANTED],g_aStats[client][C4_EXPLODED],g_aStats[client][C4_DEFUSED],g_aStats[client][CT_WIN],g_aStats[client][TR_WIN],g_aStats[client][HOSTAGES_RESCUED],g_aStats[client][VIP_KILLED],g_aStats[client][VIP_ESCAPED],g_aStats[client][VIP_PLAYED],auth);
 			SQL_LockDatabase(g_hStatsDb);
 			SQL_FastQuery(g_hStatsDb,query);
@@ -1200,11 +1201,13 @@ public Action:EventPlayerHurt(Handle:event, const String:name[], bool:dontBroadc
 	if(!g_bRankBots && (attacker == 0 || IsFakeClient(victim) || IsFakeClient(attacker))) 
 		return;
 	if(victim != attacker && attacker !=0 && attacker <MAXPLAYERS){
-		
+		new hitgroup = GetEventInt(event,"hitgroup");
+		if(hitgroup == 0) // Player was hit by knife, he, flashbang, or smokegrenade.
+			return;
 		g_aStats[attacker][HITS]++;
 		g_aSession[attacker][HITS]++;
-		new hitgroup = GetEventInt(event,"hitgroup");
 		g_aHitBox[attacker][hitgroup]++;
+		//PrintToServer("Stats Hits: %i\nSession Hits: %i\nHitBox %i -> %i",g_aStats[attacker][HITS],g_aSession[attacker][HITS],hitgroup,g_aHitBox[attacker][hitgroup]);
 	}
 }
 
@@ -1216,6 +1219,10 @@ public Action:EventWeaponFire(Handle:event,const String:name[],bool:dontBroadcas
 	new client = GetClientOfUserId(GetEventInt(event,"userid"));
 	if(!g_bRankBots && IsFakeClient(client)) 
 		return;
+	new String:sWeaponUsed[50];
+	GetEventString(event,"weapon",sWeaponUsed,sizeof(sWeaponUsed));
+	if(StrEqual(sWeaponUsed,"knife") || StrEqual(sWeaponUsed,"hegrenade") || StrEqual(sWeaponUsed,"flashbang") || StrEqual(sWeaponUsed,"smokegrenade"))
+		return; // Don't count knife being used neither hegrenade, flashbang and smokegrenade being threw
 	g_aStats[client][SHOTS]++;
 	g_aSession[client][SHOTS]++;
 	
@@ -1228,8 +1235,10 @@ public SalvarPlayer(client){
 		return;
 	if(!OnDB[client])
 		return;
-	new String:name[256];
+	new String:name[MAX_NAME_LENGTH];
 	GetClientName(client, name, sizeof(name));
+	new String:sEscapeName[MAX_NAME_LENGTH*2+1];
+	SQL_EscapeString(g_hStatsDb,name,sEscapeName,sizeof(sEscapeName));
 	//SQL_EscapeString(g_hStatsDb,name,name,sizeof(name));
 	new String:auth[32];
 	GetClientAuthString(client,auth,sizeof(auth));
@@ -1237,7 +1246,7 @@ public SalvarPlayer(client){
 	new String:ip[32];
 	GetClientIP(client,ip,sizeof(ip));
 	// Make SQL-safe
-	ReplaceString(name, sizeof(name), "'", "");
+	//ReplaceString(name, sizeof(name), "'", "");
 
 	
 	new String:weapons_query[500] = "";
@@ -1247,11 +1256,11 @@ public SalvarPlayer(client){
 	new String:query[1500];
 	if(g_bRankByName){
 		Format(query,sizeof(query),g_sSqlSaveName,g_aStats[client][SCORE],g_aStats[client][KILLS],g_aStats[client][DEATHS],g_aStats[client][SUICIDES],g_aStats[client][TK],
-			g_aStats[client][SHOTS],g_aStats[client][HITS],g_aStats[client][HEADSHOTS],g_aStats[client][ROUNDS_TR],g_aStats[client][ROUNDS_CT],ip,name,weapons_query,
-			g_aHitBox[client][1],g_aHitBox[client][2],g_aHitBox[client][3],g_aHitBox[client][4],g_aHitBox[client][5],g_aHitBox[client][6],g_aHitBox[client][7],g_aStats[client][C4_PLANTED],g_aStats[client][C4_EXPLODED],g_aStats[client][C4_DEFUSED],g_aStats[client][CT_WIN],g_aStats[client][TR_WIN],g_aStats[client][HOSTAGES_RESCUED],g_aStats[client][VIP_KILLED],g_aStats[client][VIP_ESCAPED],g_aStats[client][VIP_PLAYED],name);
+			g_aStats[client][SHOTS],g_aStats[client][HITS],g_aStats[client][HEADSHOTS],g_aStats[client][ROUNDS_TR],g_aStats[client][ROUNDS_CT],ip,sEscapeName,weapons_query,
+			g_aHitBox[client][1],g_aHitBox[client][2],g_aHitBox[client][3],g_aHitBox[client][4],g_aHitBox[client][5],g_aHitBox[client][6],g_aHitBox[client][7],g_aStats[client][C4_PLANTED],g_aStats[client][C4_EXPLODED],g_aStats[client][C4_DEFUSED],g_aStats[client][CT_WIN],g_aStats[client][TR_WIN],g_aStats[client][HOSTAGES_RESCUED],g_aStats[client][VIP_KILLED],g_aStats[client][VIP_ESCAPED],g_aStats[client][VIP_PLAYED],sEscapeName);
 	} else {
 		Format(query,sizeof(query),g_sSqlSave,g_aStats[client][SCORE],g_aStats[client][KILLS],g_aStats[client][DEATHS],g_aStats[client][SUICIDES],g_aStats[client][TK],
-			g_aStats[client][SHOTS],g_aStats[client][HITS],g_aStats[client][HEADSHOTS],g_aStats[client][ROUNDS_TR],g_aStats[client][ROUNDS_CT],ip,name,weapons_query,
+			g_aStats[client][SHOTS],g_aStats[client][HITS],g_aStats[client][HEADSHOTS],g_aStats[client][ROUNDS_TR],g_aStats[client][ROUNDS_CT],ip,sEscapeName,weapons_query,
 			g_aHitBox[client][1],g_aHitBox[client][2],g_aHitBox[client][3],g_aHitBox[client][4],g_aHitBox[client][5],g_aHitBox[client][6],g_aHitBox[client][7],g_aStats[client][C4_PLANTED],g_aStats[client][C4_EXPLODED],g_aStats[client][C4_DEFUSED],g_aStats[client][CT_WIN],g_aStats[client][TR_WIN],g_aStats[client][HOSTAGES_RESCUED],g_aStats[client][VIP_KILLED],g_aStats[client][VIP_ESCAPED],g_aStats[client][VIP_PLAYED],auth);
 	}
 	SQL_TQuery(g_hStatsDb,SQL_NothingCallback,query);
@@ -1261,7 +1270,7 @@ public SalvarPlayer(client){
 		LogError("%s",query);
 	}
 	if(g_bRankByName){
-		Format(query,sizeof(query),g_sSqlConnectsName,GetTime(),g_aStats[client][CONNECTED] + GetTime()-g_aSession[client][CONNECTED],name);
+		Format(query,sizeof(query),g_sSqlConnectsName,GetTime(),g_aStats[client][CONNECTED] + GetTime()-g_aSession[client][CONNECTED],sEscapeName);
 	} else {
 		Format(query,sizeof(query),g_sSqlConnects,GetTime(),g_aStats[client][CONNECTED] + GetTime()-g_aSession[client][CONNECTED],auth);
 	}
@@ -1288,16 +1297,18 @@ public OnClientPutInServer(client){
 	}
 	g_aSession[client][CONNECTED] = GetTime();
 	
-	new String:name[256];
+	new String:name[MAX_NAME_LENGTH];
 	GetClientName(client, name, sizeof(name));
 	strcopy(g_aClientName[client],MAX_NAME_LENGTH,name);
-	ReplaceString(name, sizeof(name), "'", "");
+	new String:sEscapeName[MAX_NAME_LENGTH*2+1];
+	SQL_EscapeString(g_hStatsDb,name,sEscapeName,sizeof(sEscapeName));
+	//ReplaceString(name, sizeof(name), "'", "");
 	new String:auth[64];
 	GetClientAuthString(client,auth,sizeof(auth));
 	strcopy(g_aClientSteam[client],64,auth);
 	new String:query[500];
 	if(g_bRankByName)
-		Format(query,sizeof(query),g_sSqlRetrieveClientName,name);
+		Format(query,sizeof(query),g_sSqlRetrieveClientName,sEscapeName);
 	else
 		Format(query,sizeof(query),g_sSqlRetrieveClient,auth);
 	if(DEBUGGING){
@@ -1320,7 +1331,7 @@ public SQL_LoadPlayerCallback(Handle:owner, Handle:hndl, const String:error[], a
 		return;
 		
 	if(g_bRankByName){
-		new String:name[256];
+		new String:name[MAX_NAME_LENGTH];
 		GetClientName(client, name, sizeof(name));
 		if(!StrEqual(name,g_aClientName[client]))
 			return;
@@ -1352,16 +1363,18 @@ public SQL_LoadPlayerCallback(Handle:owner, Handle:hndl, const String:error[], a
 		g_aStats[client][VIP_PLAYED] = SQL_FetchInt(hndl,59);
 	} else {
 		new String:query[500];
-		new String:name[256];
+		new String:name[MAX_NAME_LENGTH];
 		GetClientName(client, name, sizeof(name));
+		new String:sEscapeName[MAX_NAME_LENGTH*2+1];
+		SQL_EscapeString(g_hStatsDb,name,sEscapeName,sizeof(sEscapeName));
 		//SQL_EscapeString(g_hStatsDb,name,name,sizeof(name));
-		ReplaceString(name, sizeof(name), "'", "");
+		//ReplaceString(name, sizeof(name), "'", "");
 		new String:auth[32];
 		GetClientAuthString(client,auth,sizeof(auth));
 		
 		new String:ip[32];
 		GetClientIP(client,ip,sizeof(ip));
-		Format(query,sizeof(query),g_sSqlInsert ,auth,name,ip,g_PointsStart);
+		Format(query,sizeof(query),g_sSqlInsert ,auth,sEscapeName,ip,g_PointsStart);
 		SQL_TQuery(g_hStatsDb,SQL_NothingCallback,query,_,DBPrio_High);
 		
 		if(DEBUGGING){

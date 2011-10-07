@@ -279,3 +279,10 @@
 	 => Fix:
 		   = Optimized Round End event.
 		   = DumpDB occurring on wrong times. (bad check)
+= V.2.5.7 (10/07/11):
+	 => Fix:
+		   = Now using SQL_EscapeString for preventing SQL Injection insted of ReplaceString. (thanks Antithasys)
+		   = When using rankme_enabled 0 it will not show commands as unknown. (thanks Antithasys)
+		   = Fixed tops queries being able to use LIMIT -1. (thanks 4erkess)
+		   = Fixed RankMe_GetHitBox native.
+		   = Fixed hits and shots not being properly counted. (thanks GrO)
