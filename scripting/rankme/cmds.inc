@@ -611,7 +611,7 @@ public MenuHandler_DoNothing(Handle:menu, MenuAction:action, param1, param2){
 public Action:CMD_Rank(client,args){
 	if(!g_bEnabled || client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
-	
+	//LogToFile("rankme.debug.log","\"sm_rank\" command called by client %d.",client);
 	if(g_aStats[client][KILLS] < g_MinimalKills){
 		PrintToChat(client,"%s %t",MSG,"NotRanked",g_aStats[client][KILLS],g_MinimalKills);
 		return Plugin_Handled;
@@ -634,6 +634,7 @@ public SQL_RankCallback(Handle:owner, Handle:hndl, const String:error[], any:cli
 	}
 	if(client == 0 || !IsClientInGame(client))
 		return;
+	//LogToFile("rankme.debug.log","Rank SQL callback called by client %d.",client);
 	new i;
 	new String:name[256];
 	GetClientName(client, name, sizeof(name));

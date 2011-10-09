@@ -88,6 +88,7 @@ public __pl_rankme_SetNTVOptional()
 {
 	MarkNativeAsOptional("RankMe_GivePoint");
 	MarkNativeAsOptional("RankMe_GetRank");
+	MarkNativeAsOptional("RankMe_GetPoints");
 	MarkNativeAsOptional("RankMe_GetStats");
 	MarkNativeAsOptional("RankMe_GetSession");
 	MarkNativeAsOptional("RankMe_GetWeaponStats");
@@ -114,7 +115,16 @@ native RankMe_GivePoint(client,points,String:reason[],printtoplayer,printtoall);
  * @param data	Any data you would like that return on the callback
  * @noreturn		
  *********************************************************/
-native RankMe_GetRank(client,RankCallback:callback,any:data);
+native RankMe_GetRank(client,RankCallback:callback,any:data=0);
+
+/*********************************************************
+ * Get the score (points) of a player on the server
+ *
+ * @param client	The client index of the player to get the rank
+ * @param data	Any data you would like that return on the callback
+ * @return		The score of the client
+ *********************************************************/
+native RankMe_GetPoints(client);
 
 /*********************************************************
  * Get stats of a player on the server
@@ -151,3 +161,19 @@ native RankMe_GetWeaponStats(client,weapons_return[WEAPONS_ENUM]);
  * @noreturn		
  *********************************************************/
 native RankMe_GetHitbox(client,hitbox_return[HITBOXES]);
+
+/**********************************************************************
+ * When a player has been loaded
+ * *
+ * @param         client        The client index of the player that has been loaded
+ * @noreturn
+ **********************************************************************/
+forward Action:RankMe_OnPlayerLoaded(client);
+
+/**********************************************************************
+ * When a player has been saved
+ * *
+ * @param         client        The client index of the player that has been saved
+ * @noreturn
+ **********************************************************************/
+forward Action:RankMe_OnPlayerSaved(client);

@@ -286,3 +286,13 @@
 		   = Fixed tops queries being able to use LIMIT -1. (thanks 4erkess)
 		   = Fixed RankMe_GetHitBox native.
 		   = Fixed hits and shots not being properly counted. (thanks GrO)
+= V.2.5.8 (10/09/11):
+	 => Features:
+		   = Added Forward OnPlayerLoaded.
+		   = Added Forward OnPlayerSaved.
+		   = Added Native RankMe_GetPoints.
+	 => Fix:
+		   = Now RankMe_GetRank don't force to pass something for any:data.
+		   = Prevented an error that would occur if RankMe_GetRank was called when client disconnected.
+		   = Saving player is optimized. Now only uses one query.
+		   
