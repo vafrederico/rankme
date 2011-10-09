@@ -295,4 +295,6 @@
 		   = Now RankMe_GetRank don't force to pass something for any:data.
 		   = Prevented an error that would occur if RankMe_GetRank was called when client disconnected.
 		   = Saving player is optimized. Now only uses one query.
-		   
+= V.2.5.9 (10/09/11):
+	 => Fix:
+		   = Fixed calling SQL_EscpaeString before the connection to the database was made. (thanks GrO)
