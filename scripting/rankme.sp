@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.5.9"
+#define PLUGIN_VERSION "2.6.0"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -1330,8 +1330,7 @@ public OnClientPutInServer(client){
 	// If the database isn't connected, you can't run SQL_EscapeString.
 	if(g_hStatsDb != INVALID_HANDLE)
 		LoadPlayer(client);
-	else
-		CreateTimer(0.5,Timer_LoadPlayer,client);
+	
 }
 
 public LoadPlayer(client){
@@ -1368,22 +1367,6 @@ public LoadPlayer(client){
 	if(g_hStatsDb != INVALID_HANDLE)
 		SQL_TQuery(g_hStatsDb,SQL_LoadPlayerCallback,query,client);
 
-}
-
-public Action:Timer_LoadPlayer(Handle:timer,any:client){
-
-	if(!IsClientInGame(client))
-		return Plugin_Handled;
-		
-	if(g_hStatsDb == INVALID_HANDLE)		
-		CreateTimer(0.5,Timer_LoadPlayer,client);
-	else
-		LoadPlayer(client);
-		
-	CloseHandle(timer);
-	
-	return Plugin_Continue;
-	
 }
 
 public SQL_LoadPlayerCallback(Handle:owner, Handle:hndl, const String:error[], any:client)

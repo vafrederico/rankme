@@ -298,3 +298,6 @@
 = V.2.5.9 (10/09/11):
 	 => Fix:
 		   = Fixed calling SQL_EscpaeString before the connection to the database was made. (thanks GrO)
+= V.2.6.0 (10/11/11):
+	 => Fix:
+		   = Removed Timer_LoadPlayer as it wasn't needed. (thanks GrO and Smofly and Antithasys)
