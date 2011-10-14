@@ -161,11 +161,10 @@ ShowTOPWeapon(client,weapon,at){
 		WritePackCell(Datapack,0);
 		at = 1; // For not needing to build twice the query. (for at > 0 and at <= 0)
 	}
-	new String:query[200];
-	if(g_bRankBots && g_bShowBotsOnRank)
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY %s DESC LIMIT %i, 10",g_MinimalKills,g_sWeaponsNamesGame[weapon],at-1);
-	else
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY %s DESC LIMIT %i, 10",g_MinimalKills,g_sWeaponsNamesGame[weapon],at-1);
+	
+	new String:query[300];
+	MakeSelectQuery(query,sizeof(query));
+	Format(query,sizeof(query),"%s ORDER BY %s DESC LIMIT %i, 10",query,g_sWeaponsNamesGame[weapon],at-1);
 	
 	SQL_TQuery(g_hStatsDb,SQL_TopWeaponCallback,query,Datapack);
 
@@ -278,12 +277,10 @@ ShowTOP(client,at){
 		WritePackCell(Datapack,0);
 		at = 1; // For not needing to build twice the query. (for at > 0 and at <= 0)
 	}
-	new String:query[200];
-	if(g_bRankBots && g_bShowBotsOnRank)
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC LIMIT %i, 10",g_MinimalKills,at-1);
-	else
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC LIMIT %i, 10",g_MinimalKills,at-1);
-	
+	new String:query[300];
+	MakeSelectQuery(query,sizeof(query));
+	Format(query,sizeof(query),"%s ORDER BY score DESC LIMIT %i, 10",query,at-1);
+		
 	SQL_TQuery(g_hStatsDb,SQL_TopCallback,query,Datapack);
 
 }
@@ -401,11 +398,9 @@ ShowTOPKnife(client,at){
 		WritePackCell(Datapack,0);
 		at = 1; // For not needing to build twice the query. (for at > 0 and at <= 0)
 	}
-	new String:query[200];
-	if(g_bRankBots && g_bShowBotsOnRank)
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY knife DESC LIMIT %i, 10",g_MinimalKills,at-1);
-	else
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY knife DESC LIMIT %i, 10",g_MinimalKills,at-1);
+	new String:query[300];
+	MakeSelectQuery(query,sizeof(query));
+	Format(query,sizeof(query),"%s ORDER BY knife DESC LIMIT %i, 10",query,at-1);
 		
 	SQL_TQuery(g_hStatsDb,SQL_TopKnifeCallback,query,Datapack);
 
@@ -515,13 +510,21 @@ ShowTOPNade(client,at){
 		WritePackCell(Datapack,0);
 		at = 1; // For not needing to build twice the query. (for at > 0 and at <= 0)
 	}
-	new String:query[200];
-	if(g_bRankBots && g_bShowBotsOnRank)
-		Format(query,sizeof(query),"SELECT name,score,hegrenade+flashbang+smokegrenade as nadekill FROM rankme where kills >= '%d' ORDER BY nadekill DESC LIMIT %i, 10",g_MinimalKills,at-1);
-	else
-		Format(query,sizeof(query),"SELECT name,score,hegrenade+flashbang+smokegrenade as nadekill FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY nadekill DESC LIMIT %i, 10",g_MinimalKills,at-1);
+	new String:sQuery[400];
+	// Make basic query
+	Format(sQuery,sizeof(sQuery),"SELECT name,score,hegrenade+flashbang+smokegrenade as nadekill FROM rankme where kills >= '%d'",g_MinimalKills);
 		
-	SQL_TQuery(g_hStatsDb,SQL_TopNadeCallback,query,Datapack);
+	// Append check for bots
+	if(g_bRankBots && g_bShowBotsOnRank)
+		Format(sQuery,sizeof(sQuery),"%s AND steam <> 'BOT'",sQuery);
+	
+	// Append check for inactivity
+	if(g_DaysToNotShowOnRank > 0)
+		Format(sQuery,sizeof(sQuery),"%s AND lastconnect >= '%d'",sQuery,GetTime()-(g_DaysToNotShowOnRank*86400));
+	
+	Format(sQuery,sizeof(sQuery),"%s ORDER BY nadekill DESC LIMIT %i, 10",sQuery,at-1);
+			
+	SQL_TQuery(g_hStatsDb,SQL_TopNadeCallback,sQuery,Datapack);
 
 }
 
@@ -617,10 +620,8 @@ public Action:CMD_Rank(client,args){
 		return Plugin_Handled;
 	}
 	new String:query[500];
-	if(g_bRankBots && g_bShowBotsOnRank)
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC",g_MinimalKills);
-	else
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC",g_MinimalKills);
+	MakeSelectQuery(query,sizeof(query));
+	Format(query,sizeof(query),"%s ORDER BY score DESC",query);
 	
 	SQL_TQuery(g_hStatsDb,SQL_RankCallback,query,client);
 	return Plugin_Handled;
@@ -849,10 +850,9 @@ public Action:CMD_StatsMe(client,args){
 	if(!g_bEnabled || client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 	new String:query[500];
-	if(g_bRankBots && g_bShowBotsOnRank)
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC",g_MinimalKills);
-	else
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC",g_MinimalKills);
+	MakeSelectQuery(query,sizeof(query));
+	Format(query,sizeof(query),"%s ORDER BY score DESC",query);
+	
 	SQL_TQuery(g_hStatsDb,SQL_StatsMeCallback,query,client);
 	return Plugin_Handled;
 	
@@ -982,10 +982,9 @@ public Action:CMD_Next(client,args){
 	if(!g_bEnabled || client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 	new String:query[500];
-	if(g_bRankBots && g_bShowBotsOnRank)
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d' ORDER BY score DESC",g_MinimalKills);
-	else
-		Format(query,sizeof(query),"SELECT * FROM rankme where kills >= '%d'  AND steam <> 'BOT' ORDER BY score DESC",g_MinimalKills);
+	MakeSelectQuery(query,sizeof(query));
+	Format(query,sizeof(query),"%s ORDER BY score DESC",query);
+	
 	SQL_TQuery(g_hStatsDb,SQL_NextCallback,query,client);
 	return Plugin_Handled;
 }

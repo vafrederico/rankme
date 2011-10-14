@@ -301,3 +301,10 @@
 = V.2.6.0 (10/11/11):
 	 => Fix:
 		   = Removed Timer_LoadPlayer as it wasn't needed. (thanks GrO and Smofly and Antithasys)
+= V.2.6.1 (10/14/11):
+	 => Features:
+		   = Added cvar rankme_gather_stats. (thanks wtfaatp)
+		   = Added cvar rankme_days_to_not_show_on_rank. (thanks hasjduden)
+		    (please delete rankme.cfg before updating the plugin for showing the
+		  new cvars.).
+		   = Added NO translation. (thanks hasjduden)

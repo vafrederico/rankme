@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.6.0"
+#define PLUGIN_VERSION "2.6.1"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -62,6 +62,8 @@ new Handle:g_cvarShowBotsOnRank;
 new Handle:g_cvarRankByName;
 new Handle:g_cvarFfa;
 new Handle:g_cvarMysql;
+new Handle:g_cvarGatherStats;
+new Handle:g_cvarDaysToNotShowOnRank;
 
 new bool:g_bEnabled;
 new bool:g_bRankByName;
@@ -74,6 +76,7 @@ new bool:g_bVipEnabled;
 new bool:g_bShowBotsOnRank;
 new bool:g_bFfa;
 new bool:g_bMysql;
+new bool:g_bGatherStats;
 new bool:g_bDumpDB;
 new g_PointsBombDefusedTeam;
 new g_PointsBombDefusedPlayer;
@@ -100,6 +103,7 @@ new g_PointsVipEscapedTeam;
 new g_PointsVipEscapedPlayer;
 new g_PointsVipKilledTeam;
 new g_PointsVipKilledPlayer;
+new g_DaysToNotShowOnRank;
 
 new Handle:g_hStatsDb;
 new bool:OnDB[MAXPLAYERS+1];
@@ -174,6 +178,9 @@ public OnPluginStart(){
 	g_cvarFfa = CreateConVar("rankme_ffa","0","FFA mode? 1 = true 0 = false",_,true,0.0,true,1.0);
 	g_cvarMysql = CreateConVar("rankme_mysql","0","Using MySQL? 1 = true 0 = false (SQLite)",_,true,0.0,true,1.0);
 	g_cvarDumpDB = CreateConVar("rankme_dump_db","0","Dump the Database to SQL file? (required to be 1 if using the web interface and SQLite, case MySQL, it won't be dumped) 1 = true 0 = false",_,true,0.0,true,1.0);
+	g_cvarGatherStats = CreateConVar("rankme_gather_stats","1","Gather Statistics (a.k.a count points)? (turning this off won't disallow to see the stats already gathered) 1 = true 0 = false",_,true,0.0,true,1.0);
+	g_cvarDaysToNotShowOnRank = CreateConVar("rankme_days_to_not_show_on_rank","0","Days inactive to not be shown on rank? X = days 0 = off",_,true,0.0);
+	
 	// LOAD RANKME.CFG
 	AutoExecConfig(true,"rankme");
 	
@@ -218,6 +225,8 @@ public OnPluginStart(){
 	HookConVarChange(g_cvarRankByName,OnConVarChanged);
 	HookConVarChange(g_cvarFfa,OnConVarChanged);
 	HookConVarChange(g_cvarDumpDB,OnConVarChanged);
+	HookConVarChange(g_cvarGatherStats,OnConVarChanged);
+	HookConVarChange(g_cvarDaysToNotShowOnRank,OnConVarChanged);
 	HookConVarChange(g_cvarMysql,OnConVarChanged_MySQL);
 	
 	// LOAD TRANSLATIONS
@@ -357,6 +366,8 @@ public OnConfigsExecuted(){
 	g_bVipEnabled = GetConVarBool(g_cvarVipEnabled);
 	g_PointsLoseTk = GetConVarInt(g_cvarPointsLoseTk);
 	g_PointsLoseSuicide = GetConVarInt(g_cvarPointsLoseSuicide);
+	g_DaysToNotShowOnRank = GetConVarInt(g_cvarDaysToNotShowOnRank);
+	g_bGatherStats = GetConVarBool(g_cvarGatherStats);
 	
 	if(g_bRankBots)
 		Format(sQuery,sizeof(sQuery),"SELECT * FROM rankme WHERE kills >= '%d'",g_MinimalKills);
@@ -845,7 +856,7 @@ public GetWeaponNum(String:weaponname[]){
 }
 
 public Action: Event_VipEscaped(Handle:event, const String:name[], bool:dontBroadcast){
-	if(!g_bEnabled || g_MinimumPlayers > GetCurrentPlayers()) 
+	if(!g_bEnabled || !g_bGatherStats || g_MinimumPlayers > GetCurrentPlayers()) 
 		return;
 	new client = GetClientOfUserId(GetEventInt(event,"userid"));
 	
@@ -874,7 +885,7 @@ public Action: Event_VipEscaped(Handle:event, const String:name[], bool:dontBroa
 }
 
 public Action: Event_VipKilled(Handle:event, const String:name[], bool:dontBroadcast){
-	if(!g_bEnabled || g_MinimumPlayers > GetCurrentPlayers()) 
+	if(!g_bEnabled || !g_bGatherStats  || g_MinimumPlayers > GetCurrentPlayers()) 
 		return;
 	new client = GetClientOfUserId(GetEventInt(event,"userid"));
 	new killer = GetClientOfUserId(GetEventInt(event,"attacker"));
@@ -904,7 +915,7 @@ public Action: Event_VipKilled(Handle:event, const String:name[], bool:dontBroad
 }
 
 public Action: Event_HostageRescued(Handle:event, const String:name[], bool:dontBroadcast){
-	if(!g_bEnabled || g_MinimumPlayers > GetCurrentPlayers()) 
+	if(!g_bEnabled || !g_bGatherStats  || g_MinimumPlayers > GetCurrentPlayers()) 
 		return;
 	new client = GetClientOfUserId(GetEventInt(event,"userid"));
 	
@@ -935,7 +946,7 @@ public Action: Event_HostageRescued(Handle:event, const String:name[], bool:dont
 }
 
 public Action: Event_RoundEnd(Handle:event, const String:name[], bool:dontBroadcast){
-	if(!g_bEnabled || g_MinimumPlayers > GetCurrentPlayers()) 
+	if(!g_bEnabled || !g_bGatherStats  || g_MinimumPlayers > GetCurrentPlayers()) 
 		return;
 	new i;
 	new Winner = GetEventInt(event,"winner");
@@ -976,7 +987,7 @@ public Action: Event_RoundEnd(Handle:event, const String:name[], bool:dontBroadc
 
 public EventPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)
 {
-	if(!g_bEnabled || g_MinimumPlayers > GetCurrentPlayers()) 
+	if(!g_bEnabled || !g_bGatherStats  || g_MinimumPlayers > GetCurrentPlayers()) 
 		return;
 	
 	new client = GetClientOfUserId(GetEventInt(event,"userid"));
@@ -993,7 +1004,7 @@ public EventPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)
 
 public Action:Event_BombPlanted( Handle:event, const String:name[], bool:dontBroadcast )
 {
-	if(!g_bEnabled || g_MinimumPlayers > GetCurrentPlayers()) 
+	if(!g_bEnabled || !g_bGatherStats  || g_MinimumPlayers > GetCurrentPlayers()) 
 		return;
 	
 	new client = GetClientOfUserId(GetEventInt(event,"userid"));
@@ -1027,7 +1038,7 @@ public Action:Event_BombPlanted( Handle:event, const String:name[], bool:dontBro
 
 public Action:Event_BombDefused( Handle:event, const String:name[], bool:dontBroadcast )
 {
-	if(!g_bEnabled || g_MinimumPlayers > GetCurrentPlayers()) 
+	if(!g_bEnabled || !g_bGatherStats  || g_MinimumPlayers > GetCurrentPlayers()) 
 		return;
 	new client = GetClientOfUserId(GetEventInt(event,"userid"));
 	
@@ -1056,7 +1067,7 @@ public Action:Event_BombDefused( Handle:event, const String:name[], bool:dontBro
 
 public Action:Event_BombExploded( Handle:event, const String:name[], bool:dontBroadcast )
 {
-	if(!g_bEnabled || g_MinimumPlayers > GetCurrentPlayers()) 
+	if(!g_bEnabled || !g_bGatherStats  || g_MinimumPlayers > GetCurrentPlayers()) 
 		return;
 	new client =g_C4PlantedBy;
 	
@@ -1085,7 +1096,7 @@ public Action:Event_BombExploded( Handle:event, const String:name[], bool:dontBr
 public Action:EventPlayerDeath(Handle:event, const String:name[], bool:dontBroadcast)
 // ----------------------------------------------------------------------------
 {
-	if(!g_bEnabled || g_MinimumPlayers > GetCurrentPlayers()) 
+	if(!g_bEnabled || !g_bGatherStats  || g_MinimumPlayers > GetCurrentPlayers()) 
 		return;
 	
 	new victim = GetClientOfUserId(GetEventInt(event,"userid"));
@@ -1221,7 +1232,7 @@ public Action:EventPlayerDeath(Handle:event, const String:name[], bool:dontBroad
 public Action:EventPlayerHurt(Handle:event, const String:name[], bool:dontBroadcast)
 // ----------------------------------------------------------------------------
 {
-	if(!g_bEnabled) 
+	if(!g_bEnabled || !g_bGatherStats) 
 		return;
 	new victim = GetClientOfUserId(GetEventInt(event,"userid"));
 	new attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
@@ -1241,7 +1252,7 @@ public Action:EventPlayerHurt(Handle:event, const String:name[], bool:dontBroadc
 public Action:EventWeaponFire(Handle:event,const String:name[],bool:dontBroadcast)
 {
 
-	if(!g_bEnabled) 
+	if(!g_bEnabled || !g_bGatherStats ) 
 		return;
 	new client = GetClientOfUserId(GetEventInt(event,"userid"));
 	if(!g_bRankBots && IsFakeClient(client)) 
@@ -1256,7 +1267,7 @@ public Action:EventWeaponFire(Handle:event,const String:name[],bool:dontBroadcas
 }
 
 public SalvarPlayer(client){
-	if(!g_bEnabled) 
+	if(!g_bEnabled || !g_bGatherStats) 
 		return;
 	if(!g_bRankBots && IsFakeClient(client)) 
 		return;
@@ -1528,8 +1539,11 @@ public SQL_DumpCallback(Handle:owner, Handle:hndl, const String:error[], any:Dat
 }
 
 public OnConVarChanged(Handle:convar, const String:oldValue[], const String:newValue[]){
+	new g_bQueryPlayerCount;
+	
 	if(convar == g_cvarShowBotsOnRank){
 		g_bShowBotsOnRank = GetConVarBool(g_cvarShowBotsOnRank);
+		g_bQueryPlayerCount = true;
 	}
 	else if (convar == g_cvarRankByName){
 		g_bRankByName = GetConVarBool(g_cvarRankByName);
@@ -1545,6 +1559,7 @@ public OnConVarChanged(Handle:convar, const String:oldValue[], const String:newV
 	}
 	else if (convar == g_cvarRankbots){
 		g_bRankBots = GetConVarBool(g_cvarRankbots);
+		g_bQueryPlayerCount = true;
 	}
 	else if (convar == g_cvarFfa){
 		g_bFfa = GetConVarBool(g_cvarFfa);
@@ -1638,13 +1653,18 @@ public OnConVarChanged(Handle:convar, const String:oldValue[], const String:newV
 	}
 	else if (convar == g_cvarVipEnabled){
 		g_bVipEnabled = GetConVarBool(g_cvarVipEnabled);
+	} 
+	else if (convar == g_cvarDaysToNotShowOnRank){
+		g_DaysToNotShowOnRank = GetConVarInt(g_cvarDaysToNotShowOnRank);
+		g_bQueryPlayerCount = true;
 	}
-	else if(convar == g_cvarRankbots && g_hStatsDb != INVALID_HANDLE){
+	else if (convar == g_cvarGatherStats){
+		g_bGatherStats = GetConVarBool(g_cvarGatherStats);
+	} 
+	
+	if(g_bQueryPlayerCount && g_hStatsDb != INVALID_HANDLE){
 		new String:query[500];
-		if(g_bRankBots)
-			Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d'",g_MinimalKills);
-		else
-			Format(query,sizeof(query),"SELECT * FROM rankme WHERE kills >= '%d' AND steam <> 'BOT'",g_MinimalKills);
+		MakeSelectQuery(query,sizeof(query));
 		SQL_TQuery(g_hStatsDb,SQL_GetPlayersCallback,query);
 	}
 }
@@ -1656,4 +1676,19 @@ stock bool:IsValidClient(client, bool:nobots = true)
 			return false;  
 	}  
 	return IsClientInGame(client);  
+}
+
+stock MakeSelectQuery(String:sQuery[],strsize){
+	
+	// Make basic query
+	Format(sQuery,strsize,"SELECT * FROM rankme WHERE kills >= '%d'",g_MinimalKills);
+		
+	// Append check for bots
+	if(g_bRankBots && g_bShowBotsOnRank)
+		Format(sQuery,strsize,"%s AND steam <> 'BOT'",sQuery);
+	
+	// Append check for inactivity
+	if(g_DaysToNotShowOnRank > 0)
+		Format(sQuery,strsize,"%s AND lastconnect >= '%d'",sQuery,GetTime()-(g_DaysToNotShowOnRank*86400));
+
 }
