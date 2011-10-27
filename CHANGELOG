@@ -308,3 +308,8 @@
 		    (please delete rankme.cfg before updating the plugin for showing the
 		  new cvars.).
 		   = Added NO translation. (thanks hasjduden)
+= V.2.6.2 (10/27/11):
+	 => Fix:
+		   = Fixed a memory leak caused by not closing Datapack handles. (thanks Bacardi)
+	 => Features:
+		   = Added cvar rankme_rank_mode. Also, added rank by kdr mode. (thanks ASTFA)

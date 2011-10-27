@@ -186,6 +186,8 @@ public SQL_TopWeaponCallback(Handle:owner, Handle:hndl, const String:error[], an
 		
 	new weapon = ReadPackCell(Datapack);
 	new at = ReadPackCell(Datapack);
+	CloseHandle(Datapack);
+	
 	if(!SQL_HasResultSet(hndl) || SQL_GetRowCount(hndl) ==0){
 		ShowTOPWeapon(client,weapon,g_TotalPlayers-9);
 		return;
@@ -279,8 +281,11 @@ ShowTOP(client,at){
 	}
 	new String:query[300];
 	MakeSelectQuery(query,sizeof(query));
-	Format(query,sizeof(query),"%s ORDER BY score DESC LIMIT %i, 10",query,at-1);
-		
+	if(g_RankMode == 1)
+		Format(query,sizeof(query),"%s ORDER BY score DESC LIMIT %i, 10",query,at-1);
+	else if(g_RankMode == 2)
+		Format(query,sizeof(query),"%s ORDER BY CAST(CAST(kills as float)/CAST (deaths as float) as float) DESC, score DESC LIMIT %i, 10",query,at-1);
+	
 	SQL_TQuery(g_hStatsDb,SQL_TopCallback,query,Datapack);
 
 }
@@ -299,7 +304,7 @@ public SQL_TopCallback(Handle:owner, Handle:hndl, const String:error[], any:Data
 	if(client == 0 || !IsClientInGame(client))
 		return;
 	new at = ReadPackCell(Datapack);
-	
+	CloseHandle(Datapack);
 	if(!SQL_HasResultSet(hndl) || SQL_GetRowCount(hndl) ==0){
 		ShowTOP(client,g_TotalPlayers-9);
 		return;
@@ -419,6 +424,7 @@ public SQL_TopKnifeCallback(Handle:owner, Handle:hndl, const String:error[], any
 	if(client == 0 || !IsClientInGame(client))
 		return;
 	new at = ReadPackCell(Datapack);
+	CloseHandle(Datapack);
 	if(!SQL_HasResultSet(hndl) || SQL_GetRowCount(hndl) ==0){
 		ShowTOPKnife(client,g_TotalPlayers-9);
 		return;
@@ -541,6 +547,7 @@ public SQL_TopNadeCallback(Handle:owner, Handle:hndl, const String:error[], any:
 	if(client == 0 || !IsClientInGame(client))
 		return;
 	new at = ReadPackCell(Datapack);
+	CloseHandle(Datapack);
 	if(!SQL_HasResultSet(hndl) || SQL_GetRowCount(hndl) ==0){
 		ShowTOPNade(client,g_TotalPlayers-9);
 		return;
@@ -621,8 +628,12 @@ public Action:CMD_Rank(client,args){
 	}
 	new String:query[500];
 	MakeSelectQuery(query,sizeof(query));
-	Format(query,sizeof(query),"%s ORDER BY score DESC",query);
 	
+	if(g_RankMode == 1)
+		Format(query,sizeof(query),"%s ORDER BY score DESC",query);
+	else if(g_RankMode == 2)
+		Format(query,sizeof(query),"%s ORDER BY CAST(CAST(kills as float)/CAST (deaths as float) as float) DESC, score DESC",query);	
+		
 	SQL_TQuery(g_hStatsDb,SQL_RankCallback,query,client);
 	return Plugin_Handled;
 }
@@ -851,7 +862,10 @@ public Action:CMD_StatsMe(client,args){
 		return Plugin_Handled;
 	new String:query[500];
 	MakeSelectQuery(query,sizeof(query));
-	Format(query,sizeof(query),"%s ORDER BY score DESC",query);
+	if(g_RankMode == 1)
+		Format(query,sizeof(query),"%s ORDER BY score DESC",query);
+	else if(g_RankMode == 2)
+		Format(query,sizeof(query),"%s ORDER BY CAST(CAST(kills as float)/CAST (deaths as float) as float) DESC, score DESC",query);	
 	
 	SQL_TQuery(g_hStatsDb,SQL_StatsMeCallback,query,client);
 	return Plugin_Handled;
@@ -983,7 +997,10 @@ public Action:CMD_Next(client,args){
 		return Plugin_Handled;
 	new String:query[500];
 	MakeSelectQuery(query,sizeof(query));
-	Format(query,sizeof(query),"%s ORDER BY score DESC",query);
+	if(g_RankMode == 1)
+		Format(query,sizeof(query),"%s ORDER BY score DESC",query);
+	else if(g_RankMode == 2)
+		Format(query,sizeof(query),"%s ORDER BY CAST(CAST(kills as float)/CAST (deaths as float) as float) DESC, score DESC",query);	
 	
 	SQL_TQuery(g_hStatsDb,SQL_NextCallback,query,client);
 	return Plugin_Handled;
