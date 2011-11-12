@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.6.4"
+#define PLUGIN_VERSION "2.6.5"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -400,11 +400,17 @@ public OnConfigsExecuted(){
 	
 }
 public Action:CMD_Duplicate(client,args){
-	if(!g_bRankByName)
-		SQL_TQuery(g_hStatsDb,SQL_DuplicateCallback,g_sSqlRemoveDuplicate);
-	else
-		SQL_TQuery(g_hStatsDb,SQL_DuplicateCallback,g_sSqlRemoveDuplicateName);
+	new String:sQuery[400];
 	
+	if(!g_bRankByName)
+		Format(sQuery,sizeof(sQuery),g_sSqlRemoveDuplicate,g_sSQLTable,g_sSQLTable,g_sSQLTable,g_sSQLTable);
+		
+	else
+		Format(sQuery,sizeof(sQuery),g_sSqlRemoveDuplicateName,g_sSQLTable,g_sSQLTable,g_sSQLTable,g_sSQLTable);
+		
+	SQL_TQuery(g_hStatsDb,SQL_DuplicateCallback,sQuery,client);
+	
+	return Plugin_Handled;
 }
 
 public SQL_DuplicateCallback(Handle:owner, Handle:hndl, const String:error[], any:client)

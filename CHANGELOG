@@ -319,3 +319,6 @@
 = V.2.6.4 (11/12/11):
 	 => Fix:
 		   = Replace ' to ` when using table name in queries.
+= V.2.6.5 (11/12/11):
+	 => Fix:
+		   = Fixed remove duplicate queries, and added the return for it. (thanks hasjduden)
