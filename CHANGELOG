@@ -316,3 +316,6 @@
 = V.2.6.3 (11/11/11):
 	 => Features:
 		   = Added cvar rankme_sql_table. (thanks golden_eagle)
+= V.2.6.4 (11/12/11):
+	 => Fix:
+		   = Replace ' to ` when using table name in queries.
