@@ -31,11 +31,11 @@ public Action:CMD_ResetRank(client,args){
 	SQL_EscapeString(g_hStatsDb,arg1,sEscapeArg1,sizeof(sEscapeArg1));
 	//ReplaceString(arg1,sizeof(arg1)," ","");
 	//ReplaceString(arg1,sizeof(arg1),"\"","");
-	new String:query[100];
+	new String:query[500];
 	if(g_bRankByName){
-		Format(query,sizeof(query),"DELETE FROM rankme WHERE name='%s'",sEscapeArg1);
+		Format(query,sizeof(query),"DELETE FROM '%s' WHERE name='%s'",g_sSQLTable,sEscapeArg1);
 	} else {
-		Format(query,sizeof(query),"DELETE FROM rankme WHERE steam='%s'",arg1);
+		Format(query,sizeof(query),"DELETE FROM '%s' WHERE steam='%s'",g_sSQLTable,arg1);
 	}
 	SQL_TQuery(g_hStatsDb,SQL_NothingCallback,query);
 	LogAction(client,-1,"[RankMe]: Rank has been reset (%s)",arg1);
@@ -57,8 +57,10 @@ public Action:CMD_ResetRank(client,args){
 public Action:CMD_ResetRankAll(client,args){
 	if(!g_bEnabled) 
 		return Plugin_Handled;
-	
-	SQL_TQuery(g_hStatsDb,SQL_NothingCallback,"DELETE FROM rankme WHERE 1=1");
+		
+	new String:query[500];
+	Format(query,sizeof(query),"DELETE FROM '%s' WHERE 1=1'",g_sSQLTable);
+	SQL_TQuery(g_hStatsDb,SQL_NothingCallback,query);
 	
 	LogAction(client,-1,"[RankMe]: All rank data has been reset");
 	
@@ -88,7 +90,7 @@ public Action:CMD_Purge(client,args){
 	}
 	deletebefore = GetTime() - (StringToInt(arg1)*86400);
 	new String:query[100];
-	Format(query,sizeof(query),"DELETE FROM rankme WHERE lastconnect < '%d'",deletebefore);
+	Format(query,sizeof(query),"DELETE FROM '%s' WHERE lastconnect < '%d'",g_sSQLTable,deletebefore);
 	SQL_TQuery(g_hStatsDb,SQL_PurgeCallback,query);
 	LogAction(client,-1,"[RankMe]: Purged rank (%s days inactivity)",arg1);
 	ReplyToCommand(client,"[RankMe]: Purged");
@@ -518,7 +520,7 @@ ShowTOPNade(client,at){
 	}
 	new String:sQuery[400];
 	// Make basic query
-	Format(sQuery,sizeof(sQuery),"SELECT name,score,hegrenade+flashbang+smokegrenade as nadekill FROM rankme where kills >= '%d'",g_MinimalKills);
+	Format(sQuery,sizeof(sQuery),"SELECT name,score,hegrenade+flashbang+smokegrenade as nadekill FROM '%s' where kills >= '%d'",g_sSQLTable,g_MinimalKills);
 		
 	// Append check for bots
 	if(g_bRankBots && g_bShowBotsOnRank)
@@ -1093,10 +1095,10 @@ public Action:CMD_ResetOwnRank(client,args){
 		GetClientName(client,param,sizeof(param));
 		new String:sEscape[MAX_NAME_LENGTH*2+1];
 		SQL_EscapeString(g_hStatsDb,param,sEscape,sizeof(sEscape));
-		Format(query,sizeof(query),"DELETE FROM rankme WHERE name='%s'",sEscape);
+		Format(query,sizeof(query),"DELETE FROM '%s' WHERE name='%s'",g_sSQLTable,sEscape);
 	} else {
 		GetClientAuthString(client,param,sizeof(param));
-		Format(query,sizeof(query),"DELETE FROM rankme WHERE steam='%s'",param);
+		Format(query,sizeof(query),"DELETE FROM '%s' WHERE steam='%s'",g_sSQLTable,param);
 	}
 	SQL_TQuery(g_hStatsDb,SQL_NothingCallback,query);
 	LogAction(client,-1,"[RankMe]: Reseted own rank (%s)",param);

@@ -313,3 +313,6 @@
 		   = Fixed a memory leak caused by not closing Datapack handles. (thanks Bacardi)
 	 => Features:
 		   = Added cvar rankme_rank_mode. Also, added rank by kdr mode. (thanks ASTFA)
+= V.2.6.3 (11/11/11):
+	 => Features:
+		   = Added cvar rankme_sql_table. (thanks golden_eagle)
