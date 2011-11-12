@@ -322,3 +322,6 @@
 = V.2.6.5 (11/12/11):
 	 => Fix:
 		   = Fixed remove duplicate queries, and added the return for it. (thanks hasjduden)
+= V.2.6.6 (11/12/11):
+	 => Fix:
+		   = Fixed table not being created. (thanks TlLLluk)

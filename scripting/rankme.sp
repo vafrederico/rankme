@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.6.5"
+#define PLUGIN_VERSION "2.6.6"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -315,8 +315,9 @@ public DB_Connect(bool:firstload){
 			SetFailState("[RankMe] Unable to connect to the database (%s)",sError);
 		}
 		SQL_LockDatabase(g_hStatsDb);
-		SQL_FastQuery(g_hStatsDb,g_sSqlCreate);
 		new String:sQuery[500];
+		Format(sQuery,sizeof(sQuery),g_sSqlCreate,g_sSQLTable);
+		SQL_FastQuery(g_hStatsDb,sQuery);
 		Format(sQuery,sizeof(sQuery),"ALTER TABLE `%s` MODIFY id INTEGER AUTO_INCREMENT",g_sSQLTable);
 		SQL_FastQuery(g_hStatsDb,sQuery);
 		Format(sQuery,sizeof(sQuery),"ALTER TABLE `%s` ADD COLUMN vip_killed NUMERIC",g_sSQLTable);
