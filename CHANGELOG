@@ -325,3 +325,6 @@
 = V.2.6.6 (11/12/11):
 	 => Fix:
 		   = Fixed table not being created. (thanks TlLLluk)
+= V.2.6.7 (11/13/11):
+	 => Fix:
+		   = Fixed table not being created. Now it's fixed. (thanks TlLLluk)
