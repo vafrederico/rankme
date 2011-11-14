@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.6.7"
+#define PLUGIN_VERSION "2.6.8"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -1547,7 +1547,7 @@ public SQL_DumpCallback(Handle:owner, Handle:hndl, const String:error[], any:Dat
 		return;
 	new fields = SQL_GetFieldCount(hndl);
 	new bool:first;
-	WriteFileLine(File1,g_sSqlCreate);
+	WriteFileLine(File1,g_sSqlCreate,g_sSQLTable);
 	WriteFileLine(File1,"");
 	
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
@@ -1568,7 +1568,7 @@ public SQL_DumpCallback(Handle:owner, Handle:hndl, const String:error[], any:Dat
 				Format(fields_values,sizeof(fields_values),"%s,\"%s\"",fields_values,field);
 		}
 	
-		WriteFileLine(File1,"INSERT INTO `rankme` VALUES (%s);",fields_values);
+		WriteFileLine(File1,"INSERT INTO `%s` VALUES (%s);",g_sSQLTable,fields_values);
 	}
 	CloseHandle(File1);
 }

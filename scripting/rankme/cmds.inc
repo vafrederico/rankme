@@ -59,7 +59,7 @@ public Action:CMD_ResetRankAll(client,args){
 		return Plugin_Handled;
 		
 	new String:query[500];
-	Format(query,sizeof(query),"DELETE FROM `%s` WHERE 1=1'",g_sSQLTable);
+	Format(query,sizeof(query),"DELETE FROM `%s` WHERE 1=1",g_sSQLTable);
 	SQL_TQuery(g_hStatsDb,SQL_NothingCallback,query);
 	
 	LogAction(client,-1,"[RankMe]: All rank data has been reset");
