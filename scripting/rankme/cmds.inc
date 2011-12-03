@@ -874,6 +874,240 @@ public Action:CMD_StatsMe(client,args){
 	
 }
 
+public Action:CMD_StatsMe2(client,args){
+	if(!g_bEnabled || client == 0 || !IsClientInGame(client))
+		return Plugin_Handled;
+		
+	new String:arg1[MAX_NAME_LENGTH];
+	GetCmdArg(1,arg1,sizeof(arg1));
+	StripQuotes(arg1);
+	new String:query[500];
+	MakeSelectQuery(query,sizeof(query));
+	
+	new String:order[200];
+	if(g_RankMode == 1)
+		Format(order,sizeof(order),"ORDER BY score DESC");
+	else if(g_RankMode == 2)
+		Format(order,sizeof(order),"ORDER BY CAST(CAST(kills as float)/CAST (deaths as float) as float) DESC, score DESC");
+	new Handle:hDatapack = CreateDataPack();
+	
+	WritePackCell(hDatapack,client);
+	new bool:tn_is_ml;
+	new String:tname[MAX_NAME_LENGTH];
+	new targets[1];
+	
+	
+	if(ProcessTargetString(arg1,0,targets,1,COMMAND_FILTER_NO_MULTI,tname,sizeof(tname),tn_is_ml) == 1){
+		new target = targets[0];
+	
+		WritePackCell(hDatapack,0);
+		
+		if(g_bRankByName){
+		
+			new String:name[MAX_NAME_LENGTH];
+			GetClientName(target, name, sizeof(name));
+			new String:sEscapeName[MAX_NAME_LENGTH*2+1];
+			SQL_EscapeString(g_hStatsDb,name,sEscapeName,sizeof(sEscapeName));
+			Format(query,sizeof(query),"%s AND name='%s' %s", query,sEscapeName,order);
+			
+		} else {
+		
+			new String:auth[64];
+			GetClientAuthString(target,auth,sizeof(auth));
+			Format(query,sizeof(query),"%s AND steam='%s' %s", query,auth,order);
+			
+		}
+		
+		WritePackCell(hDatapack,target);
+		
+	} else if(StrContains(arg1,"#",false) == 0) {
+		
+		WritePackCell(hDatapack,1);
+		
+		Format(query,sizeof(query),"%s %s LIMIT %d, 1",query,order, StringToInt(arg1[1]) - 1);
+
+		WritePackCell(hDatapack,StringToInt(arg1[1]));
+		
+	} else if(!g_bRankByName && StrContains(arg1,"STEAM_") == 0) {
+		
+		WritePackCell(hDatapack,2);
+		
+		new String:sEscapeAuth[MAX_NAME_LENGTH*2+1];
+		SQL_EscapeString(g_hStatsDb,arg1,sEscapeAuth,sizeof(sEscapeAuth));
+		Format(query,sizeof(query),"%s AND steam='%s' %s", query,sEscapeAuth,order);
+		
+		WritePackString(hDatapack,sEscapeAuth);
+		
+	} else {
+		
+		CloseHandle(hDatapack);
+		
+		PrintToChat(client,"%sUsage: sm_statsme2 <name / #position on top / steam>",MSG);
+		
+		return Plugin_Handled;
+	}
+	//PrintToServer(query);
+	SQL_TQuery(g_hStatsDb,SQL_StatsMe2Callback,query,hDatapack);
+	
+	return Plugin_Handled;
+	
+}
+
+public SQL_StatsMe2Callback(Handle:owner, Handle:hndl, const String:error[], any:hDatapack){
+	if(hndl == INVALID_HANDLE)
+	{
+		LogError("[RankMe] Query Fail: %s", error);
+		return;
+	}
+	
+	ResetPack(hDatapack);
+	
+	new client = ReadPackCell(hDatapack);
+	
+	if(client == 0 || !IsClientInGame(client))
+		return;
+		
+	new type = ReadPackCell(hDatapack);
+	new i;
+	
+	new String:auth[32];
+	new String:name[MAX_NAME_LENGTH];
+	new target;
+	
+	if(type == 0){
+		
+		target = ReadPackCell(hDatapack);
+		
+		GetClientAuthString(target,auth,sizeof(auth));
+		
+		GetClientName(target,name,sizeof(name));
+		
+	} else if (type == 1) {
+		
+		i = ReadPackCell(hDatapack);
+	
+	} else if(type == 2) {
+	
+		ReadPackString(hDatapack,auth,sizeof(auth));
+		
+	}
+	
+	new String:Auth_receive[32];
+	new String:Name_receive[MAX_NAME_LENGTH];
+	
+	if(type != 1){
+		
+		while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
+		{
+			i++;
+			SQL_FetchString(hndl,1,Auth_receive,32);
+			
+			SQL_FetchString(hndl,2,Name_receive,MAX_NAME_LENGTH);
+			
+			if((g_bRankByName && StrEqual(name,Name_receive)) || (!g_bRankByName && StrEqual(Auth_receive,auth,false)))
+				break;
+		}
+
+	} else if (SQL_HasResultSet(hndl)){
+		SQL_FetchRow(hndl);
+		SQL_FetchString(hndl,1,Auth_receive,32);
+		
+		SQL_FetchString(hndl,2,Name_receive,MAX_NAME_LENGTH);
+	}
+	/*
+	
+	Passar de g_stats para SQL fields
+	
+	*/
+	new Handle:panel = CreateMenuEx(_,MenuHandler_DoNothing,MENU_ACTIONS_ALL);
+	
+	SetMenuTitle(panel,Name_receive);
+	
+	new String:text[255];
+	SetMenuPagination(panel,4);
+	new ikills = SQL_FetchInt(hndl,5);
+	new ideaths= SQL_FetchInt(hndl,6);
+	new deaths;
+	if(ideaths == 0)
+		deaths = 1;
+	else 
+		deaths=ideaths;
+	new Float:kills = IntToFloat(ikills);
+	new shots = SQL_FetchInt(hndl,9);
+	if(shots == 0)
+		shots = 1;
+	
+	new hits = SQL_FetchInt(hndl,10);
+	new String:temp[255];
+	Format(temp,sizeof(temp),"- %T\n","BasicStats",client);
+	StrCat(text,255,temp);
+	if(i == 0)
+		Format(temp,sizeof(temp),"%T: %i\n","Points",client,SQL_FetchInt(hndl,4));
+	else
+		Format(temp,sizeof(temp),"Rank: %i/%i   %T: %i\n",i,g_TotalPlayers,"Points",client,SQL_FetchInt(hndl,4));
+	StrCat(text,255,temp);
+	Format(temp,255,"%T   KDR: %.2f\n","KillsDeaths",client,ikills,ideaths,kills/deaths);
+	StrCat(text,255,temp);
+	Format(temp,255,"Headshots: %d   %T: %d   TKs: %d\n ",SQL_FetchInt(hndl,11),"Suicides",client,SQL_FetchInt(hndl,7),SQL_FetchInt(hndl,8));
+	StrCat(text,255,temp);
+	AddMenuItem(panel,"",text);
+	text="";
+	
+	Format(temp,sizeof(temp),"- %T\n","RoundStats",client);
+	StrCat(text,255,temp);
+	Format(temp,255,"%T: %d/%d   %T: %d/%d\n ","TRWins",client,SQL_FetchInt(hndl,55),SQL_FetchInt(hndl,13),"CTWins",client,SQL_FetchInt(hndl,54),SQL_FetchInt(hndl,14));
+	StrCat(text,255,temp);
+	AddMenuItem(panel,"",text);
+	text="";
+	
+	Format(temp,sizeof(temp),"- %T\n","HitStats",client);
+	StrCat(text,255,temp);
+	Format(temp,255,"%T: %d   %T: %d   %T: %.2f%%\n ","Shots",client,shots,"Hits",client,hits,"Accuracy",client,IntToFloat(hits)/shots*100);
+	StrCat(text,255,temp);
+	AddMenuItem(panel,"",text);
+	text="";
+	
+	Format(temp,sizeof(temp),"- %T\n","BombHostagesStats",client);
+	StrCat(text,255,temp);
+	Format(temp,255,"%T: %d   %T: %d   %T: %d\n","PlantedBombs",client,SQL_FetchInt(hndl,51),"ExplodedBombs",client,SQL_FetchInt(hndl,52),"DefusedBombs",client,SQL_FetchInt(hndl,53));
+	StrCat(text,255,temp);
+	Format(temp,255,"%T: %d","RescuedHostages",client,SQL_FetchInt(hndl,56));
+	StrCat(text,255,temp);
+	AddMenuItem(panel,"",text);
+	text="";
+				
+	if(g_bVipEnabled){
+		Format(temp,sizeof(temp),"- %T\n","VIPStats",client);
+		StrCat(text,255,temp);
+		Format(temp,255,"%T: %d/%d   %T: %d\n ","VIPEscapes",client,SQL_FetchInt(hndl,58),SQL_FetchInt(hndl,59),"VIPsKilled",client,SQL_FetchInt(hndl,57));
+		StrCat(text,255,temp);
+		AddMenuItem(panel,"",text);
+		text="";
+	}
+	
+	Format(temp,sizeof(temp),"- %T\n","OtherStats",client);
+	StrCat(text,255,temp);
+	
+	new time = SQL_FetchInt(hndl,12);
+	if(target != 0 && IsClientInGame(target))
+		time += GetTime()-g_aSession[client][CONNECTED];
+		
+	new hours = RoundToFloor(time/3600.0);
+	time = time-(hours*3600);
+	
+	new minutes = RoundToFloor(time/60.0);
+	time = time-(minutes*60);
+	
+	Format(temp,255,"%T","TimeConnected",client,hours,minutes,time);
+	StrCat(text,255,temp);
+	AddMenuItem(panel,"",text);
+	text="";
+	DisplayMenu(panel,client,MENU_TIME_FOREVER);
+			
+		
+	
+}
+
 public SQL_StatsMeCallback(Handle:owner, Handle:hndl, const String:error[], any:client){
 	if(hndl == INVALID_HANDLE)
 	{

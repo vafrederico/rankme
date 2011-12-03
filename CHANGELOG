@@ -332,3 +332,6 @@
 	 => Fix:
 		   = Fixed sm_resetrank_all command.(thanks TlLLluk)
 		   = Fixed DB Dumping. (thanks zing)
+= V.2.6.9 (12/02/11):
+	 => Features:
+		   = Added sm_statsme2 command.(thanks Fearts)

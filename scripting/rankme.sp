@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.6.8"
+#define PLUGIN_VERSION "2.6.9"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -139,7 +139,9 @@ public Plugin:myinfo = {
 };
 
 public OnPluginStart(){
-
+	
+	//LoadTranslations("common.phrases");
+	
 	// CREATE CVARS
 	g_cvarEnabled = CreateConVar("rankme_enabled","1","Is RankMe enabled? 1 = true 0 = false",_,true,0.0,true,1.0);
 	g_cvarRankbots = CreateConVar("rankme_rankbots","0","Rank bots? 1 = true 0 = false",_,true,0.0,true,1.0);
@@ -259,6 +261,7 @@ public OnPluginStart(){
 	RegAdminCmd("sm_rankpurge",CMD_Purge,ADMFLAG_ROOT);
 	RegAdminCmd("sm_resetrank_all",CMD_ResetRankAll,ADMFLAG_ROOT);
 	RegAdminCmd("sm_rankme_import_mani",CMD_ManiImport,ADMFLAG_ROOT);
+	RegAdminCmd("sm_statsme2",CMD_StatsMe2,ADMFLAG_GENERIC);
 	
 	// PLAYER COMMANDS
 	RegConsoleCmd("sm_session",CMD_Session);
