@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.6.9"
+#define PLUGIN_VERSION "2.7.0"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>

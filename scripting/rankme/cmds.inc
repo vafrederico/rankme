@@ -901,29 +901,17 @@ public Action:CMD_StatsMe2(client,args){
 		new target = targets[0];
 	
 		WritePackCell(hDatapack,0);
-		
-		if(g_bRankByName){
-		
-			new String:name[MAX_NAME_LENGTH];
-			GetClientName(target, name, sizeof(name));
-			new String:sEscapeName[MAX_NAME_LENGTH*2+1];
-			SQL_EscapeString(g_hStatsDb,name,sEscapeName,sizeof(sEscapeName));
-			Format(query,sizeof(query),"%s AND name='%s' %s", query,sEscapeName,order);
-			
-		} else {
-		
-			new String:auth[64];
-			GetClientAuthString(target,auth,sizeof(auth));
-			Format(query,sizeof(query),"%s AND steam='%s' %s", query,auth,order);
-			
-		}
-		
+		Format(query,sizeof(query),"%s %s", query,order);
+	
 		WritePackCell(hDatapack,target);
 		
 	} else if(StrContains(arg1,"#",false) == 0) {
 		
 		WritePackCell(hDatapack,1);
 		
+		if(StringToInt(arg1[1]) > g_TotalPlayers)
+			Format(arg1,sizeof(arg1),"#%d",g_TotalPlayers);
+			
 		Format(query,sizeof(query),"%s %s LIMIT %d, 1",query,order, StringToInt(arg1[1]) - 1);
 
 		WritePackCell(hDatapack,StringToInt(arg1[1]));
@@ -932,11 +920,9 @@ public Action:CMD_StatsMe2(client,args){
 		
 		WritePackCell(hDatapack,2);
 		
-		new String:sEscapeAuth[MAX_NAME_LENGTH*2+1];
-		SQL_EscapeString(g_hStatsDb,arg1,sEscapeAuth,sizeof(sEscapeAuth));
-		Format(query,sizeof(query),"%s AND steam='%s' %s", query,sEscapeAuth,order);
+		Format(query,sizeof(query),"%s %s", query,order);
 		
-		WritePackString(hDatapack,sEscapeAuth);
+		WritePackString(hDatapack,arg1);
 		
 	} else {
 		
@@ -991,7 +977,7 @@ public SQL_StatsMe2Callback(Handle:owner, Handle:hndl, const String:error[], any
 		ReadPackString(hDatapack,auth,sizeof(auth));
 		
 	}
-	
+	CloseHandle(hDatapack);
 	new String:Auth_receive[32];
 	new String:Name_receive[MAX_NAME_LENGTH];
 	
@@ -1013,6 +999,8 @@ public SQL_StatsMe2Callback(Handle:owner, Handle:hndl, const String:error[], any
 		SQL_FetchString(hndl,1,Auth_receive,32);
 		
 		SQL_FetchString(hndl,2,Name_receive,MAX_NAME_LENGTH);
+	} else {
+		return;
 	}
 	/*
 	

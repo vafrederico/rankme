@@ -335,3 +335,7 @@
 = V.2.6.9 (12/02/11):
 	 => Features:
 		   = Added sm_statsme2 command.(thanks Fearts)
+= V.2.7.0 (12/03/11):
+	 => Fix:
+		   = Fixed sm_statsme2 showing everyone as top1.(thanks Fearts)
+		   = Fixed sm_statsme2 error in case was retrieving a top position higher than avaliable.
