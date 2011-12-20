@@ -1325,7 +1325,7 @@ public Action:CMD_ResetOwnRank(client,args){
 	SQL_TQuery(g_hStatsDb,SQL_NothingCallback,query);
 	LogAction(client,-1,"[RankMe]: Reseted own rank (%s)",param);
 	OnClientPutInServer(client);
-	ReplyToCommand(client,"[RankMe]: Reseted");
+	ReplyToCommand(client,"%sReseted",MSG);
 	return Plugin_Handled;
 }
 

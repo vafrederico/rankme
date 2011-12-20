@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.7.0"
+#define PLUGIN_VERSION "2.7.1"
 #include <sourcemod> 
 #include <colors>
 #include <rankme>
@@ -290,6 +290,7 @@ public OnPluginStart(){
 	// Create the forwards
 	g_fwdOnPlayerLoaded = CreateGlobalForward("RankMe_OnPlayerLoaded",ET_Hook,Param_Cell);
 	g_fwdOnPlayerSaved = CreateGlobalForward("RankMe_OnPlayerSaved",ET_Hook,Param_Cell);
+	
 }
 
 public OnConVarChanged_SQLTable(Handle:convar, const String:oldValue[], const String:newValue[]){
@@ -330,7 +331,7 @@ public DB_Connect(bool:firstload){
 		Format(sQuery,sizeof(sQuery),"ALTER TABLE `%s` ADD COLUMN vip_played NUMERIC",g_sSQLTable);
 		SQL_FastQuery(g_hStatsDb,sQuery);
 		SQL_UnlockDatabase(g_hStatsDb);
-		
+
 		for(new i=1;i<=MaxClients;i++){
 			if(IsClientInGame(i))
 				OnClientPutInServer(i);
@@ -664,7 +665,6 @@ public Native_GetHitbox(Handle:plugin, numParams)
 public DumpDB(){
 	if(!g_bDumpDB || g_bMysql)
 		return;
-		
 	new String:sQuery[500];
 	Format(sQuery,sizeof(sQuery),"SELECT * from `%s`",g_sSQLTable);
 	SQL_TQuery(g_hStatsDb,SQL_DumpCallback,sQuery);
@@ -991,9 +991,7 @@ public Action: Event_RoundEnd(Handle:event, const String:name[], bool:dontBroadc
 	new bool:announced=false;
 	for(i=1;i<=MaxClients;i++)
 	{
-		if(IsClientInGame(i)){
-			if(!g_bRankBots && IsFakeClient(i)) 
-				return;
+		if(IsClientInGame(i) && (g_bRankBots || !IsFakeClient(i))){
 			if(Winner == TR && GetClientTeam(i)==TR){
 				g_aSession[i][TR_WIN]++;
 				g_aStats[i][TR_WIN]++;
@@ -1020,6 +1018,7 @@ public Action: Event_RoundEnd(Handle:event, const String:name[], bool:dontBroadc
 			
 		}
 	}
+	
 	DumpDB();
 }
 
@@ -1224,7 +1223,7 @@ public Action:EventPlayerDeath(Handle:event, const String:name[], bool:dontBroad
 		else
 			aname = "";
 	
-		if(g_MinimalKills == 0 || (g_aStats[victim][KILLS] > g_MinimalKills && g_aStats[attacker][KILLS] > g_MinimalKills)){
+		if(g_MinimalKills == 0 || (g_aStats[victim][KILLS] >= g_MinimalKills && g_aStats[attacker][KILLS] >= g_MinimalKills)){
 			if(g_bChatChange){
 				CPrintToChat(victim,"%s %t",MSG,"Killing",aname,g_aStats[attacker][SCORE],score_dif,vname,g_aStats[victim][SCORE]);
 				if(attacker < MAXPLAYERS)
@@ -1545,9 +1544,13 @@ public SQL_DumpCallback(Handle:owner, Handle:hndl, const String:error[], any:Dat
 	new Handle:File1;
 	new String:fields_values[600];
 	new String:field[100];
+	
 	File1 = OpenFile("rank.sql","w");
-	if(File1==INVALID_HANDLE)
-		return;
+	if(File1==INVALID_HANDLE){
+		
+		LogError("[RankMe] Unable to open dump file.");
+		
+	}
 	new fields = SQL_GetFieldCount(hndl);
 	new bool:first;
 	WriteFileLine(File1,g_sSqlCreate,g_sSQLTable);

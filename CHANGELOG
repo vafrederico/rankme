@@ -339,3 +339,9 @@
 	 => Fix:
 		   = Fixed sm_statsme2 showing everyone as top1.(thanks Fearts)
 		   = Fixed sm_statsme2 error in case was retrieving a top position higher than avaliable.
+= V.2.7.1 (12/20/11):
+	 => Fix:
+		   = Fixed a minor bug on checking if needed to show on chat the kills and minimal kills.
+		   = Added a error message log for when unable to open the dump file.
+		   = Fixed a case where the dump file could be not generated.
+		   = Fixed sm_resetmyrank command not being colored.
