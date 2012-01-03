@@ -133,7 +133,7 @@ native RankMe_GetPoints(client);
  * @param stats_return	The array that will return the data following the ENUM STATS_NAME;
  * @noreturn		
  *********************************************************/
-native RankMe_GetStats(client,stats_return[STATS_NAMES]);
+native RankMe_GetStats(client,stats_return[]);
 
 /*********************************************************
  * Get session of a player on the server
@@ -142,7 +142,7 @@ native RankMe_GetStats(client,stats_return[STATS_NAMES]);
  * @param session_return	The array that will return the data following the ENUM STATS_NAME;
  * @noreturn		
  *********************************************************/
-native RankMe_GetSession(client,session_return[STATS_NAMES]);
+native RankMe_GetSession(client,session_return[]);
 
 /*********************************************************
  * Get weapon stats of a player on the server
@@ -151,7 +151,7 @@ native RankMe_GetSession(client,session_return[STATS_NAMES]);
  * @param session_return	The array that will return the data following the ENUM WEAPONS_ENUM;
  * @noreturn		
  *********************************************************/
-native RankMe_GetWeaponStats(client,weapons_return[WEAPONS_ENUM]);
+native RankMe_GetWeaponStats(client,weapons_return[]);
 
 /*********************************************************
  * Get hitbox stats of a player on the server
@@ -160,7 +160,7 @@ native RankMe_GetWeaponStats(client,weapons_return[WEAPONS_ENUM]);
  * @param session_return	The array that will return the data following the ENUM HITBOXES;
  * @noreturn		
  *********************************************************/
-native RankMe_GetHitbox(client,hitbox_return[HITBOXES]);
+native RankMe_GetHitbox(client,hitbox_return[]);
 
 /**********************************************************************
  * When a player has been loaded

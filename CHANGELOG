@@ -345,3 +345,20 @@
 		   = Added a error message log for when unable to open the dump file.
 		   = Fixed a case where the dump file could be not generated.
 		   = Fixed sm_resetmyrank command not being colored.
+= V.2.7.2 (01/03/12):
+	 => Fix:
+		   = Fixed Mani Import function when running in MySQL mode. (thanks HolyDuFF)
+		   = Fixed resetrank not reseting the rank when ranking by name until rejoining the server. (thanks imteme)
+		   = Added descriptions to the commands.
+		   = Fixed GetRank native not working if ranking by name.
+		   = Updated Natives to avoid compatibility issues that could happen in a plugin update.
+		   = Optimized code, now instead always getting name, ip and steam:id, using the data that were buffered
+		   for the Load Player callback.
+	 => Features:
+		   = Added Top HS.
+		   = Added Top Accuracy.
+		   = Added sm_rankme command.		   
+		   = Added rankme_chat_triggers cvar for disabling chat triggers like rank, statsme. Recommend to disable
+		   when running EventScripts for avoiding double responses.
+		   = Added giving points for being the MVP.
+		   = Added support for ranking by IP.

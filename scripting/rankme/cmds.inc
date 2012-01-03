@@ -32,22 +32,41 @@ public Action:CMD_ResetRank(client,args){
 	//ReplaceString(arg1,sizeof(arg1)," ","");
 	//ReplaceString(arg1,sizeof(arg1),"\"","");
 	new String:query[500];
-	if(g_bRankByName){
+	if(g_RankBy == 1){
 		Format(query,sizeof(query),"DELETE FROM `%s` WHERE name='%s'",g_sSQLTable,sEscapeArg1);
-	} else {
-		Format(query,sizeof(query),"DELETE FROM `%s` WHERE steam='%s'",g_sSQLTable,arg1);
+	} else if (g_RankBy == 0){
+		Format(query,sizeof(query),"DELETE FROM `%s` WHERE steam='%s'",g_sSQLTable,sEscapeArg1);
+	} else if (g_RankBy == 2){
+		Format(query,sizeof(query),"DELETE FROM `%s` WHERE lastip='%s'",g_sSQLTable,sEscapeArg1);
 	}
 	SQL_TQuery(g_hStatsDb,SQL_NothingCallback,query);
 	LogAction(client,-1,"[RankMe]: Rank has been reset (%s)",arg1);
 	new String:auth[64];
+	new String:name[MAX_NAME_LENGTH];
+	new String:ip[64];
 	for(new i=1;i<=MaxClients;i++){
 		if(IsClientInGame(i)){
 		
-			GetClientAuthString(i,auth,sizeof(auth));
+			if(g_RankBy == 1){
+				
+				GetClientName(i,name,sizeof(name));
+				
+				if(StrEqual(name,arg1,false))
+					OnClientPutInServer(i);
 			
-			if(StrEqual(auth,arg1,false))
-				OnClientPutInServer(i);
-		
+			} else if(g_RankBy == 0){
+				GetClientAuthString(i,auth,sizeof(auth));
+				
+				if(StrEqual(auth,arg1,false))
+					OnClientPutInServer(i);
+			} else if(g_RankBy == 2){
+				
+				GetClientIP(i,ip,sizeof(ip));
+				
+				if(StrEqual(ip,arg1,false))
+					OnClientPutInServer(i);
+			
+			}
 		}
 	}
 	ReplyToCommand(client,"[RankMe]: The rank has been reset");
@@ -613,6 +632,360 @@ public MenuHandler_TopNade(Handle:menu, MenuAction:action, param1, param2){
 	}
 }
 
+public Action:CMD_TopHS(client,args){
+	if(!g_bEnabled || client == 0 || !IsClientInGame(client))
+		return Plugin_Handled;
+
+	new String:arg1[5];
+	GetCmdArg(1,arg1,sizeof(arg1));
+	if(!StrEqual(arg1,"") && StringToInt(arg1) != 0){
+		ShowTopHS(client,StringToInt(arg1));
+	}	else {
+		ShowTopHS(client,0);
+	}
+	return Plugin_Handled;
+}
+
+ShowTopHS(client,at){
+	if(client == 0 || !IsClientInGame(client))
+		return;
+	new Handle:Datapack= CreateDataPack();
+	
+	WritePackCell(Datapack,client);
+	
+	if(at>0){
+		WritePackCell(Datapack,at-1);
+	}	else {
+		WritePackCell(Datapack,0);
+		at = 1; // For not needing to build twice the query. (for at > 0 and at <= 0)
+	}
+	new String:query[300];
+	MakeSelectQuery(query,sizeof(query));
+	Format(query,sizeof(query),"%s ORDER BY headshots DESC LIMIT %i, 10",query,at-1);
+		
+	SQL_TQuery(g_hStatsDb,SQL_TopHSCallback,query,Datapack);
+
+}
+
+public SQL_TopHSCallback(Handle:owner, Handle:hndl, const String:error[], any:Datapack){
+	if(hndl == INVALID_HANDLE)
+	{
+		LogError("[RankMe] Query Fail: %s", error);
+		PrintToServer(error);
+		return;
+	}
+	ResetPack(Datapack);
+	new i;
+	new client = ReadPackCell(Datapack);
+	if(client == 0 || !IsClientInGame(client))
+		return;
+	new at = ReadPackCell(Datapack);
+	CloseHandle(Datapack);
+	if(!SQL_HasResultSet(hndl) || SQL_GetRowCount(hndl) ==0){
+		ShowTopHS(client,g_TotalPlayers-9);
+		return;
+	}
+	new String:name[256];
+	new String:temp[500];
+	
+	new Handle:menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle:MenuStyle_Radio),MenuHandler_TopHS);
+	
+	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	SetMenuTitle(menu,"");
+	new String:sBuffer[200];
+	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
+	{
+		
+		i++;
+		
+		SQL_FetchString(hndl,2,name,sizeof(name));
+			
+		
+	
+		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - HeadShot: %d\n",i+at,name,SQL_FetchInt(hndl,4),SQL_FetchInt(hndl,11));
+		
+		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
+			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			sBuffer="\0";
+		}
+	} 
+	Format(temp,sizeof(temp),"%s\n ",temp);
+	AddMenuItem(menu,temp,temp);
+	
+	
+	IntToString(at+i,temp,sizeof(temp));
+	new String:temp1[20];
+	Format(temp1,sizeof(temp1),"%T","Next",client);
+	if(i>9)
+		AddMenuItem(menu,temp,temp1);
+	IntToString(at-i,temp,sizeof(temp));
+	Format(temp1,sizeof(temp1),"%T","Back",client);
+	if(at+i-1 >9)
+		AddMenuItem(menu,temp,temp1);
+
+	DisplayMenuAtItem(menu,client,at,MENU_TIME_FOREVER);
+}
+
+public MenuHandler_TopHS(Handle:menu, MenuAction:action, param1, param2){
+	
+	if (action == MenuAction_Select)
+	{
+		new String:temp[250];
+	
+		GetMenuItem(menu, param2, temp, sizeof(temp));
+		if(StringToInt(temp) >= 0){
+			ShowTopHS(param1,StringToInt(temp)+1);
+		} else {
+			ShowTopHS(param1,0);
+		}
+	}
+	if (action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+}
+
+public Action:CMD_TopAcc(client,args){
+	if(!g_bEnabled || client == 0 || !IsClientInGame(client))
+		return Plugin_Handled;
+	
+	new String:arg1[5];
+	GetCmdArg(1,arg1,sizeof(arg1));
+	if(!StrEqual(arg1,"") && StringToInt(arg1) != 0){
+		ShowTopAcc(client,StringToInt(arg1));
+	}	else {
+		ShowTopAcc(client,0);
+	}
+	return Plugin_Handled;
+}
+
+ShowTopAcc(client,at){
+	if(client == 0 || !IsClientInGame(client))
+		return;
+	new Handle:Datapack= CreateDataPack();
+	
+	WritePackCell(Datapack,client);
+	
+	if(at>0){
+		WritePackCell(Datapack,at-1);
+	}	else {
+		WritePackCell(Datapack,0);
+		at = 1; // For not needing to build twice the query. (for at > 0 and at <= 0)
+	}
+	new String:query[300];
+	MakeSelectQuery(query,sizeof(query));
+	Format(query,sizeof(query),"%s ORDER BY CAST(CAST(hits as float)/CAST (shots as float) as float) DESC LIMIT %i, 10",query,at-1);
+	
+	SQL_TQuery(g_hStatsDb,SQL_TopAccCallback,query,Datapack);
+
+}
+
+public SQL_TopAccCallback(Handle:owner, Handle:hndl, const String:error[], any:Datapack){
+	if(hndl == INVALID_HANDLE)
+	{
+		LogError("[RankMe] Query Fail: %s", error);
+		PrintToServer(error);
+		return;
+	}
+	
+	ResetPack(Datapack);
+	new i;
+	new client = ReadPackCell(Datapack);
+	if(client == 0 || !IsClientInGame(client))
+		return;
+	new at = ReadPackCell(Datapack);
+	CloseHandle(Datapack);
+	if(!SQL_HasResultSet(hndl) || SQL_GetRowCount(hndl) ==0){
+		ShowTopAcc(client,g_TotalPlayers-9);
+		return;
+	}
+	new String:name[256];
+	new String:temp[500];
+	
+	new Handle:menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle:MenuStyle_Radio),MenuHandler_TopAcc);
+
+	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	SetMenuTitle(menu,"");
+	new shots;
+	new hits;
+	new String:sBuffer[200];
+	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
+	{
+		
+		i++;
+		
+		SQL_FetchString(hndl,2,name,sizeof(name));
+			
+		shots = SQL_FetchInt(hndl,9);
+		if(shots == 0)
+			shots = 1;
+		
+		hits = SQL_FetchInt(hndl,10);
+		
+		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %T: %.2f%%\n",i+at,name,SQL_FetchInt(hndl,4),"Accuracy",client,IntToFloat(hits)/shots*100);
+		
+		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
+			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			sBuffer="\0";
+		}
+	} 
+	Format(temp,sizeof(temp),"%s\n ",temp);
+	AddMenuItem(menu,temp,temp);
+	
+	
+	IntToString(at+i,temp,sizeof(temp));
+	new String:temp1[20];
+	Format(temp1,sizeof(temp1),"%T","Next",client);
+	if(i>9)
+		AddMenuItem(menu,temp,temp1);
+	IntToString(at-i,temp,sizeof(temp));
+	Format(temp1,sizeof(temp1),"%T","Back",client);
+	if(at+i-1 >9)
+		AddMenuItem(menu,temp,temp1);
+	
+	DisplayMenuAtItem(menu,client,at,MENU_TIME_FOREVER);
+}
+
+public MenuHandler_TopAcc(Handle:menu, MenuAction:action, param1, param2){
+	
+	if (action == MenuAction_Select)
+	{
+		new String:temp[250];
+	
+		GetMenuItem(menu, param2, temp, sizeof(temp));
+		if(StringToInt(temp) >= 0){
+			ShowTopAcc(param1,StringToInt(temp)+1);
+		} else {
+			ShowTopAcc(param1,0);
+		}
+	}
+	if (action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+}
+
+public Action:CMD_TopTime(client,args){
+	if(!g_bEnabled || client == 0 || !IsClientInGame(client))
+		return Plugin_Handled;
+
+	new String:arg1[5];
+	GetCmdArg(1,arg1,sizeof(arg1));
+	if(!StrEqual(arg1,"") && StringToInt(arg1) != 0){
+		ShowTopTime(client,StringToInt(arg1));
+	}	else {
+		ShowTopTime(client,0);
+	}
+	return Plugin_Handled;
+}
+
+ShowTopTime(client,at){
+	if(client == 0 || !IsClientInGame(client))
+		return;
+	new Handle:Datapack= CreateDataPack();
+	
+	WritePackCell(Datapack,client);
+	
+	if(at>0){
+		WritePackCell(Datapack,at-1);
+	}	else {
+		WritePackCell(Datapack,0);
+		at = 1; // For not needing to build twice the query. (for at > 0 and at <= 0)
+	}
+	new String:query[300];
+	MakeSelectQuery(query,sizeof(query));
+	Format(query,sizeof(query),"%s ORDER BY connected DESC LIMIT %i, 10",query,at-1);
+		
+	SQL_TQuery(g_hStatsDb,SQL_TopTimeCallback,query,Datapack);
+
+}
+
+public SQL_TopTimeCallback(Handle:owner, Handle:hndl, const String:error[], any:Datapack){
+	if(hndl == INVALID_HANDLE)
+	{
+		LogError("[RankMe] Query Fail: %s", error);
+		PrintToServer(error);
+		return;
+	}
+	ResetPack(Datapack);
+	new i;
+	new client = ReadPackCell(Datapack);
+	if(client == 0 || !IsClientInGame(client))
+		return;
+	new at = ReadPackCell(Datapack);
+	CloseHandle(Datapack);
+	if(!SQL_HasResultSet(hndl) || SQL_GetRowCount(hndl) ==0){
+		ShowTopTime(client,g_TotalPlayers-9);
+		return;
+	}
+	new String:name[256];
+	new String:temp[500];
+	
+	new Handle:menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle:MenuStyle_Radio),MenuHandler_TopTime);
+	
+	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	SetMenuTitle(menu,"");
+	new String:sBuffer[200];
+	new time;
+	new hours;
+	new minutes;
+	
+	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
+	{
+		
+		i++;
+		
+		SQL_FetchString(hndl,2,name,sizeof(name));
+			
+		time = SQL_FetchInt(hndl,12);
+		hours = RoundToFloor(time/3600.0);
+		time = time-(hours*3600);
+		minutes = RoundToFloor(time/60.0);
+		time = time-(minutes*60);
+		
+		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %d:%d:%d\n",i+at,name,SQL_FetchInt(hndl,4),hours,minutes,time);
+		
+		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
+			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			sBuffer="\0";
+		}
+	} 
+	Format(temp,sizeof(temp),"%s\n ",temp);
+	AddMenuItem(menu,temp,temp);
+	
+	
+	IntToString(at+i,temp,sizeof(temp));
+	new String:temp1[20];
+	Format(temp1,sizeof(temp1),"%T","Next",client);
+	if(i>9)
+		AddMenuItem(menu,temp,temp1);
+	IntToString(at-i,temp,sizeof(temp));
+	Format(temp1,sizeof(temp1),"%T","Back",client);
+	if(at+i-1 >9)
+		AddMenuItem(menu,temp,temp1);
+
+	DisplayMenuAtItem(menu,client,at,MENU_TIME_FOREVER);
+}
+
+public MenuHandler_TopTime(Handle:menu, MenuAction:action, param1, param2){
+	
+	if (action == MenuAction_Select)
+	{
+		new String:temp[250];
+	
+		GetMenuItem(menu, param2, temp, sizeof(temp));
+		if(StringToInt(temp) >= 0){
+			ShowTopTime(param1,StringToInt(temp)+1);
+		} else {
+			ShowTopTime(param1,0);
+		}
+	}
+	if (action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+}
+
 public MenuHandler_DoNothing(Handle:menu, MenuAction:action, param1, param2){
 	if (action == MenuAction_End)
 	{
@@ -650,32 +1023,31 @@ public SQL_RankCallback(Handle:owner, Handle:hndl, const String:error[], any:cli
 		return;
 	//LogToFile("rankme.debug.log","Rank SQL callback called by client %d.",client);
 	new i;
-	new String:name[256];
-	GetClientName(client, name, sizeof(name));
-	new String:auth[32];
-	GetClientAuthString(client,auth,sizeof(auth));
+	
 	g_TotalPlayers =SQL_GetRowCount(hndl);
 	new String:Name_receive[MAX_NAME_LENGTH];
-	new String:Auth_receive[32];
+	new String:Auth_receive[64];
+	new String:Ip_receive[64];
+	new Float:kdr;
+	new deaths;
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
 	{
 		i++;
-		SQL_FetchString(hndl,2,Name_receive,MAX_NAME_LENGTH);
-		SQL_FetchString(hndl,1,Auth_receive,32);
+		SQL_FetchString(hndl,2,Name_receive,MAX_NAME_LENGTH*2+1);
+		SQL_FetchString(hndl,1,Auth_receive,64);
+		SQL_FetchString(hndl,3,Ip_receive,64);
+	//	PrintToServer("%d %s %s",i, Name_receive, Auth_receive);
+		if((g_RankBy == 1 && StrEqual(Name_receive,g_aClientName[client],false)) || (g_RankBy == 0 && StrEqual(Auth_receive,g_aClientSteam[client],false)) || (g_RankBy == 2 && StrEqual(Ip_receive,g_aClientIp[client],false))){
+			deaths=SQL_FetchInt(hndl,6);
 			
-		if((g_bRankByName && StrEqual(Name_receive,name,false)) || (!g_bRankByName && StrEqual(Auth_receive,auth,false))){
-			new Float:kdr;
-			new deaths;
-			if(SQL_FetchInt(hndl,6) == 0)
+			if(deaths == 0)
 				deaths = 1;
-			else 
-				deaths=SQL_FetchInt(hndl,6);
 			
 			kdr = SQL_FetchFloat(hndl,5)/deaths;
 			if(g_bShowRankAll){
-				CPrintToChatAll("%s %t",MSG,"IsRankedAt", name,i,SQL_GetRowCount(hndl),g_aStats[client][SCORE],g_aStats[client][KILLS],g_aStats[client][DEATHS],kdr);
+				CPrintToChatAll("%s %t",MSG,"IsRankedAt", g_aClientName[client],i,g_TotalPlayers,g_aStats[client][SCORE],g_aStats[client][KILLS],g_aStats[client][DEATHS],kdr);
 			} else {
-				CPrintToChat(client,"%s %t",MSG,"IsRankedAt", name,i,SQL_GetRowCount(hndl),g_aStats[client][SCORE],g_aStats[client][KILLS],g_aStats[client][DEATHS],kdr);
+				CPrintToChat(client,"%s %t",MSG,"IsRankedAt", g_aClientName[client],i,g_TotalPlayers,g_aStats[client][SCORE],g_aStats[client][KILLS],g_aStats[client][DEATHS],kdr);
 			}
 			break;
 		}
@@ -916,7 +1288,7 @@ public Action:CMD_StatsMe2(client,args){
 
 		WritePackCell(hDatapack,StringToInt(arg1[1]));
 		
-	} else if(!g_bRankByName && StrContains(arg1,"STEAM_") == 0) {
+	} else if(g_RankBy == 0 && StrContains(arg1,"STEAM_") == 0) {
 		
 		WritePackCell(hDatapack,2);
 		
@@ -956,8 +1328,9 @@ public SQL_StatsMe2Callback(Handle:owner, Handle:hndl, const String:error[], any
 	new type = ReadPackCell(hDatapack);
 	new i;
 	
-	new String:auth[32];
+	new String:auth[64];
 	new String:name[MAX_NAME_LENGTH];
+	
 	new target;
 	
 	if(type == 0){
@@ -978,7 +1351,7 @@ public SQL_StatsMe2Callback(Handle:owner, Handle:hndl, const String:error[], any
 		
 	}
 	CloseHandle(hDatapack);
-	new String:Auth_receive[32];
+	new String:Auth_receive[64];
 	new String:Name_receive[MAX_NAME_LENGTH];
 	
 	if(type != 1){
@@ -986,27 +1359,23 @@ public SQL_StatsMe2Callback(Handle:owner, Handle:hndl, const String:error[], any
 		while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
 		{
 			i++;
-			SQL_FetchString(hndl,1,Auth_receive,32);
+			SQL_FetchString(hndl,1,Auth_receive,64);
 			
 			SQL_FetchString(hndl,2,Name_receive,MAX_NAME_LENGTH);
 			
-			if((g_bRankByName && StrEqual(name,Name_receive)) || (!g_bRankByName && StrEqual(Auth_receive,auth,false)))
+			if((g_RankBy == 1 && StrEqual(name,Name_receive)) || (g_RankBy == 0 && StrEqual(Auth_receive,auth,false)))
 				break;
 		}
 
 	} else if (SQL_HasResultSet(hndl)){
 		SQL_FetchRow(hndl);
-		SQL_FetchString(hndl,1,Auth_receive,32);
+		SQL_FetchString(hndl,1,Auth_receive,64);
 		
 		SQL_FetchString(hndl,2,Name_receive,MAX_NAME_LENGTH);
 	} else {
 		return;
 	}
-	/*
 	
-	Passar de g_stats para SQL fields
-	
-	*/
 	new Handle:panel = CreateMenuEx(_,MenuHandler_DoNothing,MENU_ACTIONS_ALL);
 	
 	SetMenuTitle(panel,Name_receive);
@@ -1105,24 +1474,23 @@ public SQL_StatsMeCallback(Handle:owner, Handle:hndl, const String:error[], any:
 	if(client == 0 || !IsClientInGame(client))
 		return;
 	new i;
-	new String:auth[32];
-	GetClientAuthString(client,auth,sizeof(auth));
-	new String:name[MAX_NAME_LENGTH];
-	GetClientName(client,name,sizeof(name));
-	g_TotalPlayers =SQL_GetRowCount(hndl);
-	new String:Auth_receive[32];
-	new String:Name_receive[MAX_NAME_LENGTH];
 	
+	g_TotalPlayers =SQL_GetRowCount(hndl);
+	new String:Auth_receive[64];
+	new String:Name_receive[MAX_NAME_LENGTH];
+	new String:Ip_receive[64];
 	if(g_aStats[client][KILLS] >= g_MinimalKills){
 		
 		while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
 		{
 			i++;
-			SQL_FetchString(hndl,1,Auth_receive,32);
+			SQL_FetchString(hndl,1,Auth_receive,64);
 			
 			SQL_FetchString(hndl,2,Name_receive,MAX_NAME_LENGTH);
 			
-			if((g_bRankByName && StrEqual(name,Name_receive)) || (!g_bRankByName && StrEqual(Auth_receive,auth,false)))
+			SQL_FetchString(hndl,3,Ip_receive,64);
+			
+			if((g_RankBy == 1 && StrEqual(g_aClientName[client],Name_receive)) || (g_RankBy == 0 && StrEqual(Auth_receive,g_aClientSteam[client],false)) || (g_RankBy == 2 && StrEqual(Ip_receive,g_aClientIp[client],false)))
 				break;
 		}
 	} else {
@@ -1244,21 +1612,19 @@ public SQL_NextCallback(Handle:owner, Handle:hndl, const String:error[], any:cli
 	new String:next_players_name[10][MAX_NAME_LENGTH];
 	new next_players_score[10];
 	new bool:dobreak;
-	new String:name[MAX_NAME_LENGTH];
-	GetClientName(client,name,sizeof(name));
-	new String:auth[32];
-	GetClientAuthString(client,auth,sizeof(auth));
-	new String:Auth_receive[32];
+	
+	new String:Auth_receive[64];
 	new String:Name_receive[MAX_NAME_LENGTH];
+	new String:Ip_receive[64];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
 	{
 		i++;
 		
-		SQL_FetchString(hndl,1,Auth_receive,32);
+		SQL_FetchString(hndl,1,Auth_receive,64);
 		SQL_FetchString(hndl,2,Name_receive,MAX_NAME_LENGTH);
+		SQL_FetchString(hndl,3,Ip_receive,64);
 		
-		
-		if((g_bRankByName && StrEqual(name,Name_receive)) || (!g_bRankByName && StrEqual(Auth_receive,auth,false))){
+		if((g_RankBy == 1 && StrEqual(g_aClientName[client],Name_receive)) || (g_RankBy == 0 && StrEqual(Auth_receive,g_aClientSteam[client],false)) || (g_RankBy == 2 && StrEqual(Ip_receive,g_aClientIp[client],false))){
 		
 			dobreak=true;
 		
@@ -1311,19 +1677,19 @@ public Action:CMD_ResetOwnRank(client,args){
 
 	if(!g_bEnabled || !g_bResetOwnRank || client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
-	new String:param[MAX_NAME_LENGTH];
-	new String:query[100];
-	if(g_bRankByName){
-		GetClientName(client,param,sizeof(param));
+	new String:query[300];
+	if(g_RankBy == 1){
+		
 		new String:sEscape[MAX_NAME_LENGTH*2+1];
-		SQL_EscapeString(g_hStatsDb,param,sEscape,sizeof(sEscape));
+		SQL_EscapeString(g_hStatsDb,g_aClientName[client],sEscape,sizeof(sEscape));
 		Format(query,sizeof(query),"DELETE FROM `%s` WHERE name='%s'",g_sSQLTable,sEscape);
-	} else {
-		GetClientAuthString(client,param,sizeof(param));
-		Format(query,sizeof(query),"DELETE FROM `%s` WHERE steam='%s'",g_sSQLTable,param);
+	} else if(g_RankBy == 0){
+		Format(query,sizeof(query),"DELETE FROM `%s` WHERE steam='%s'",g_sSQLTable,g_aClientSteam[client]);
+	} else if(g_RankBy == 2){
+		Format(query,sizeof(query),"DELETE FROM `%s` WHERE lastip='%s'",g_sSQLTable,g_aClientIp[client]);
 	}
 	SQL_TQuery(g_hStatsDb,SQL_NothingCallback,query);
-	LogAction(client,-1,"[RankMe]: Reseted own rank (%s)",param);
+	LogAction(client,-1,"[RankMe]: Reseted own rank (%s - %s - %s)",g_aClientName[client],g_aClientSteam[client],g_aClientIp[client]);
 	OnClientPutInServer(client);
 	ReplyToCommand(client,"%sReseted",MSG);
 	return Plugin_Handled;
@@ -1339,4 +1705,178 @@ public FloatToInt(Float:ifloat){
 	new String:s[300];
 	FloatToString(ifloat,s,sizeof(s));
 	return StringToInt(s);
+}
+
+
+public Action:CMD_RankMe(client,args){
+
+	new Handle:hMenu = CreateMenu(MenuHandler_RankMe);
+	
+	SetMenuExitButton(hMenu,true);
+	
+	SetMenuTitle(hMenu,"RankMe");
+	
+	AddMenuItem(hMenu,"rank", "Rank");
+	
+	if(g_bResetOwnRank)
+		AddMenuItem(hMenu,"resetmyrank","Reset My Rank");
+		
+	AddMenuItem(hMenu,"statsme", "StatsMe");
+	
+	if(CheckCommandAccess(client, "sm_statsme2", ADMFLAG_GENERIC))
+		AddMenuItem(hMenu,"statsme2", "StatsMe2");
+	
+	AddMenuItem(hMenu,"session", "Session");
+	
+	AddMenuItem(hMenu,"hitboxme", "HitBoxMe");
+	
+	AddMenuItem(hMenu,"weaponme", "WeaponMe");
+	
+	AddMenuItem(hMenu,"next", "Next");
+	
+	AddMenuItem(hMenu,"top10", "TOP 10");
+	
+	AddMenuItem(hMenu,"topweapon", "TOP Weapon");
+	
+	AddMenuItem(hMenu,"topnade", "TOP Grenade");
+	
+	AddMenuItem(hMenu,"topacc", "TOP Accuracy");
+
+	AddMenuItem(hMenu,"tophs", "TOP HS");
+
+	AddMenuItem(hMenu,"toptime", "TOP Time Connected");
+	
+	if(CheckCommandAccess(client, "sm_resetrank", ADMFLAG_ROOT))
+		AddMenuItem(hMenu,"resetrank", "Reset a player rank");
+		
+	if(CheckCommandAccess(client, "sm_resetrank_all", ADMFLAG_ROOT))
+		AddMenuItem(hMenu,"resetrankall", "Reset all the rank");
+	
+	DisplayMenu(hMenu,client,MENU_TIME_FOREVER);
+	
+}
+
+public MenuHandler_RankMe(Handle:menu, MenuAction:action, client, param2){
+	
+	if (action == MenuAction_Select)
+	{
+		new String:temp[250];
+	
+		GetMenuItem(menu, param2, temp, sizeof(temp));
+		
+		if(StrEqual(temp,"rank"))
+			CMD_Rank(client,0);
+		
+		else if(StrEqual(temp,"resetmyrank"))
+			CMD_ResetOwnRank(client,0);
+		
+		else if(StrEqual(temp,"statsme"))
+			CMD_StatsMe(client,0);
+			
+		else if(StrEqual(temp,"session"))
+			CMD_Session(client,0);
+		
+		else if(StrEqual(temp,"hitboxme"))
+			CMD_HitBox(client,0);
+			
+		else if(StrEqual(temp,"weaponme"))
+			CMD_WeaponMe(client,0);
+				
+		else if(StrEqual(temp,"next"))
+			CMD_Next(client,0);
+		
+		else if(StrEqual(temp,"top10"))
+			ShowTOP(client,0);
+			
+		else if(StrEqual(temp,"topweapon"))
+			CMD_TopWeapon(client,0);
+			
+		else if(StrEqual(temp,"topnade"))
+			ShowTOPNade(client, 0);
+			
+		else if(StrEqual(temp,"topacc"))
+			ShowTopAcc(client,0);
+		
+		else if(StrEqual(temp,"tophs"))
+			ShowTopHS(client,0);
+		
+		else if(StrEqual(temp,"toptime"))
+			ShowTopTime(client,0);
+			
+		else if(StrEqual(temp,"resetrank")){
+			
+			new Handle:hMenu = CreateMenu(MenuHandler_TargetResetRank);
+			AddTargetsToMenu2(hMenu,0,COMMAND_FILTER_NO_BOTS);
+			
+			DisplayMenu(hMenu,client,MENU_TIME_FOREVER);
+		}
+		else if(StrEqual(temp,"statsme2")){
+			
+			new Handle:hMenu = CreateMenu(MenuHandler_TargetStatsMe2);
+			AddTargetsToMenu2(hMenu,0,COMMAND_FILTER_NO_BOTS);
+			
+			DisplayMenu(hMenu,client,MENU_TIME_FOREVER);
+		}
+		
+		else if(StrEqual(temp,"resetrankall"))
+			CMD_ResetRankAll(client,0);
+		
+		
+	}
+	if (action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+	
+}
+
+public MenuHandler_TargetResetRank(Handle:menu, MenuAction:action, client, param2){
+	
+	if (action == MenuAction_Select)
+	{
+		new String:temp[250];
+	
+		GetMenuItem(menu, param2, temp, sizeof(temp));
+		new target = GetClientOfUserId(StringToInt(temp));
+		
+		if(g_RankBy == 1){
+			
+			ClientCommand(client,"sm_resetrank \"%s\"",g_aClientName[target]);
+		} else if(g_RankBy == 0){
+			
+			ClientCommand(client,"sm_resetrank \"%s\"",g_aClientSteam[target]);
+		} else if(g_RankBy == 2){
+			
+			ClientCommand(client,"sm_resetrank \"%s\"",g_aClientIp[target]);
+		}
+	}
+	if (action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+	
+}
+
+public MenuHandler_TargetStatsMe2(Handle:menu, MenuAction:action, client, param2){
+	
+	if (action == MenuAction_Select)
+	{
+		new String:temp[250];
+	
+		GetMenuItem(menu, param2, temp, sizeof(temp));
+		new target = GetClientOfUserId(StringToInt(temp));
+		
+		if(g_RankBy == 0 || g_RankBy == 2){
+			
+			ClientCommand(client,"sm_statsme2 \"%s\"",g_aClientName[target]);
+		} else {
+			
+			ClientCommand(client,"sm_statsme2 \"%s\"",g_aClientSteam[target]);
+		}
+	}
+	if (action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+	
 }

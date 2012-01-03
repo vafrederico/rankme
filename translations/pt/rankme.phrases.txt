@@ -1,5 +1,9 @@
 ﻿"Phrases"
 {
+	"MVP"
+	{
+		"pt"		"{lightgreen}{1}{default} ({2}) ganhou {3} pontos(s) por ser o Jogador de Maior Valor (MVP)."
+	}
 	"Kills"
 	{
 		"pt"		"Mortos"
