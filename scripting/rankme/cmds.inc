@@ -304,8 +304,12 @@ ShowTOP(client,at){
 	MakeSelectQuery(query,sizeof(query));
 	if(g_RankMode == 1)
 		Format(query,sizeof(query),"%s ORDER BY score DESC LIMIT %i, 10",query,at-1);
-	else if(g_RankMode == 2)
-		Format(query,sizeof(query),"%s ORDER BY CAST(CAST(kills as float)/CAST (deaths as float) as float) DESC, score DESC LIMIT %i, 10",query,at-1);
+	else if(g_RankMode == 2){
+		if(g_bMysql)
+			Format(query,sizeof(query),"%s ORDER BY CAST(kills as DECIMAL)/CAST(Case when deaths=0 then 1 ELSE deaths END as DECIMAL) DESC, score DESC LIMIT %i, 10",query,at-1);
+		else
+			Format(query,sizeof(query),"%s ORDER BY CAST(kills as float)/CAST(Case when deaths=0 then 1 ELSE deaths END as float) DESC, score DESC LIMIT %i, 10",query,at-1);
+	}
 	
 	SQL_TQuery(g_hStatsDb,SQL_TopCallback,query,Datapack);
 
@@ -774,7 +778,11 @@ ShowTopAcc(client,at){
 	}
 	new String:query[300];
 	MakeSelectQuery(query,sizeof(query));
-	Format(query,sizeof(query),"%s ORDER BY CAST(CAST(hits as float)/CAST (shots as float) as float) DESC LIMIT %i, 10",query,at-1);
+	
+	if(g_bMysql)
+		Format(query,sizeof(query),"%s ORDER BY CAST(hits as DECIMAL)/CAST(Case when shots=0 then 1 ELSE shots END as DECIMAL) DESC LIMIT %i, 10",query,at-1);
+	else
+		Format(query,sizeof(query),"%s ORDER BY CAST(hits as float)/CAST(Case when shots=0 then 1 ELSE shots END as float) DESC LIMIT %i, 10",query,at-1);
 	
 	SQL_TQuery(g_hStatsDb,SQL_TopAccCallback,query,Datapack);
 
@@ -1006,8 +1014,12 @@ public Action:CMD_Rank(client,args){
 	
 	if(g_RankMode == 1)
 		Format(query,sizeof(query),"%s ORDER BY score DESC",query);
-	else if(g_RankMode == 2)
-		Format(query,sizeof(query),"%s ORDER BY CAST(CAST(kills as float)/CAST (deaths as float) as float) DESC, score DESC",query);	
+	else if(g_RankMode == 2){
+		if(g_bMysql)
+			Format(query,sizeof(query),"%s ORDER BY CAST(kills as DECIMAL)/CAST(Case when deaths=0 then 1 ELSE deaths END as DECIMAL) DESC, score DESC",query);
+		else
+			Format(query,sizeof(query),"%s ORDER BY CAST(kills as float)/CAST(Case when deaths=0 then 1 ELSE deaths END as float) DESC, score DESC",query);
+	}	
 		
 	SQL_TQuery(g_hStatsDb,SQL_RankCallback,query,client);
 	return Plugin_Handled;
@@ -1238,8 +1250,12 @@ public Action:CMD_StatsMe(client,args){
 	MakeSelectQuery(query,sizeof(query));
 	if(g_RankMode == 1)
 		Format(query,sizeof(query),"%s ORDER BY score DESC",query);
-	else if(g_RankMode == 2)
-		Format(query,sizeof(query),"%s ORDER BY CAST(CAST(kills as float)/CAST (deaths as float) as float) DESC, score DESC",query);	
+	else if(g_RankMode == 2){
+		if(g_bMysql)
+			Format(query,sizeof(query),"%s ORDER BY CAST(kills as DECIMAL)/CAST(Case when deaths=0 then 1 ELSE deaths END as DECIMAL) DESC, score DESC",query);
+		else
+			Format(query,sizeof(query),"%s ORDER BY CAST(kills as float)/CAST(Case when deaths=0 then 1 ELSE deaths END as float) DESC, score DESC",query);
+	}	
 	
 	SQL_TQuery(g_hStatsDb,SQL_StatsMeCallback,query,client);
 	return Plugin_Handled;
@@ -1259,8 +1275,12 @@ public Action:CMD_StatsMe2(client,args){
 	new String:order[200];
 	if(g_RankMode == 1)
 		Format(order,sizeof(order),"ORDER BY score DESC");
-	else if(g_RankMode == 2)
-		Format(order,sizeof(order),"ORDER BY CAST(CAST(kills as float)/CAST (deaths as float) as float) DESC, score DESC");
+	else if(g_RankMode == 2){
+		if(g_bMysql)
+			Format(query,sizeof(query),"%s ORDER BY CAST(kills as DECIMAL)/CAST(Case when deaths=0 then 1 ELSE deaths END as DECIMAL) DESC, score DESC",query);
+		else
+			Format(query,sizeof(query),"%s ORDER BY CAST(kills as float)/CAST(Case when deaths=0 then 1 ELSE deaths END as float) DESC, score DESC",query);
+	}	
 	new Handle:hDatapack = CreateDataPack();
 	
 	WritePackCell(hDatapack,client);
@@ -1591,8 +1611,12 @@ public Action:CMD_Next(client,args){
 	MakeSelectQuery(query,sizeof(query));
 	if(g_RankMode == 1)
 		Format(query,sizeof(query),"%s ORDER BY score DESC",query);
-	else if(g_RankMode == 2)
-		Format(query,sizeof(query),"%s ORDER BY CAST(CAST(kills as float)/CAST (deaths as float) as float) DESC, score DESC",query);	
+	else if(g_RankMode == 2){
+		if(g_bMysql)
+			Format(query,sizeof(query),"%s ORDER BY CAST(kills as DECIMAL)/CAST(Case when deaths=0 then 1 ELSE deaths END as DECIMAL) DESC, score DESC",query);
+		else
+			Format(query,sizeof(query),"%s ORDER BY CAST(kills as float)/CAST(Case when deaths=0 then 1 ELSE deaths END as float) DESC, score DESC",query);
+	}	
 	
 	SQL_TQuery(g_hStatsDb,SQL_NextCallback,query,client);
 	return Plugin_Handled;

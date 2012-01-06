@@ -362,3 +362,6 @@
 		   when running EventScripts for avoiding double responses.
 		   = Added giving points for being the MVP.
 		   = Added support for ranking by IP.
+= V.2.7.3 (01/06/12):
+	 => Fix:
+		   = Fixed ORDER BY KDR and Accuraccy queries. (thanks krispx)
