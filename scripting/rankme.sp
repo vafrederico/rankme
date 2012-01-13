@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.7.3"
+#define PLUGIN_VERSION "2.7.4"
 #include <sourcemod> 
 #include <adminmenu>
 #include <colors>
@@ -260,19 +260,19 @@ public OnPluginStart(){
 	LoadTranslations("rankme.phrases");
 	
 	// EVENTS
-	HookEvent("player_death",	EventPlayerDeath);
-	HookEvent("player_spawn",	EventPlayerSpawn);
-	HookEvent("player_hurt",	EventPlayerHurt);
-	HookEvent("weapon_fire", EventWeaponFire);
-	HookEvent( "bomb_planted", Event_BombPlanted );
-	HookEvent( "bomb_defused", Event_BombDefused );
-	HookEvent( "bomb_exploded", Event_BombExploded );
-	HookEvent( "hostage_rescued", Event_HostageRescued );
-	HookEvent( "vip_killed", Event_VipKilled );
-	HookEvent( "vip_escaped", Event_VipEscaped );
-	HookEvent("round_end", Event_RoundEnd);
-	HookEvent("round_mvp", Event_RoundMVP);
-	HookEvent("player_changename", OnClientChangeName, EventHookMode_Pre);
+	HookEventEx("player_death",	EventPlayerDeath);
+	HookEventEx("player_spawn",	EventPlayerSpawn);
+	HookEventEx("player_hurt",	EventPlayerHurt);
+	HookEventEx("weapon_fire", EventWeaponFire);
+	HookEventEx( "bomb_planted", Event_BombPlanted );
+	HookEventEx( "bomb_defused", Event_BombDefused );
+	HookEventEx( "bomb_exploded", Event_BombExploded );
+	HookEventEx( "hostage_rescued", Event_HostageRescued );
+	HookEventEx( "vip_killed", Event_VipKilled );
+	HookEventEx( "vip_escaped", Event_VipEscaped );
+	HookEventEx("round_end", Event_RoundEnd);
+	HookEventEx("round_mvp", Event_RoundMVP);
+	HookEventEx("player_changename", OnClientChangeName, EventHookMode_Pre);
 	
 	// ADMNIN COMMANDS
 	RegAdminCmd("sm_resetrank",CMD_ResetRank,ADMFLAG_ROOT,"RankMe: Resets the rank of a player");

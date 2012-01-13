@@ -365,3 +365,6 @@
 = V.2.7.3 (01/06/12):
 	 => Fix:
 		   = Fixed ORDER BY KDR and Accuraccy queries. (thanks krispx)
+= V.2.7.4 (01/13/12):
+	 => Fix:
+		   = Now using HookEventEx instead HookEvent to avoid errors.
