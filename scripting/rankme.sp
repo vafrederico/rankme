@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.7.4"
+#define PLUGIN_VERSION "2.7.5"
 #include <sourcemod> 
 #include <adminmenu>
 #include <colors>
@@ -1071,12 +1071,21 @@ public Action: Event_RoundMVP(Handle:event, const String:name[], bool:dontBroadc
 	
 	if(((team == 2 && g_PointsMvpTr > 0) || (team == 3 && g_PointsMvpCt > 0)) && client != 0 && (g_bRankBots || !IsFakeClient(client))){
 		
-		if(team == 2)
-			CPrintToChatAll("%s %t",MSG,"MVP",g_aClientName[client],g_aStats[client][SCORE],g_PointsMvpCt);
-		
-		else 
+		if(team == 2){
+			
+			g_aStats[client][SCORE] += g_PointsMvpTr;
+			g_aSession[client][SCORE] += g_PointsMvpTr;
 			CPrintToChatAll("%s %t",MSG,"MVP",g_aClientName[client],g_aStats[client][SCORE],g_PointsMvpTr);
+			
+		} else {
+			
+			g_aStats[client][SCORE] += g_PointsMvpCt;
+			g_aSession[client][SCORE] += g_PointsMvpCt;
+			CPrintToChatAll("%s %t",MSG,"MVP",g_aClientName[client],g_aStats[client][SCORE],g_PointsMvpCt);
+			
+		}
 	}
+	
 	
 }
 public Action: Event_RoundEnd(Handle:event, const String:name[], bool:dontBroadcast){

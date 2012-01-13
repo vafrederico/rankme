@@ -368,3 +368,6 @@
 = V.2.7.4 (01/13/12):
 	 => Fix:
 		   = Now using HookEventEx instead HookEvent to avoid errors.
+= V.2.7.5 (01/13/12):
+	 => Fix:
+		   = Fixed not giving points for being MVP and wrong annoucement. (thanks Dave_h1234)
