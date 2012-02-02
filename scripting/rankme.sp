@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.7.5"
+#define PLUGIN_VERSION "2.7.6"
 #include <sourcemod> 
 #include <adminmenu>
 #include <colors>
@@ -20,9 +20,12 @@ new String:g_sSqlSaveIp[] = "UPDATE `%s` SET score = '%i', kills = '%i', deaths=
 new String:g_sSqlRetrieveClient[] = "SELECT * FROM `%s` WHERE steam='%s';";
 new String:g_sSqlRetrieveClientName[] = "SELECT * FROM `%s` WHERE name='%s';";
 new String:g_sSqlRetrieveClientIp[] = "SELECT * FROM `%s` WHERE lastip='%s';";
-new String:g_sSqlRemoveDuplicate[] = "delete from `%s` where `%s`.id > (SELECT min(id) from `%s` as t2 WHERE t2.steam=`%s`.steam);";
-new String:g_sSqlRemoveDuplicateName[] = "delete from `%s` where `%s`.id > (SELECT min(id) from `%s` as t2 WHERE t2.name=`%s`.name);";
-new String:g_sSqlRemoveDuplicateIp[] = "delete from `%s` where `%s`.id > (SELECT min(id) from `%s` as t2 WHERE t2.lastip=`%s`.lastip);";
+new String:g_sSqlRemoveDuplicateSQLite[] = "delete from `%s` where `%s`.id > (SELECT min(id) from `%s` as t2 WHERE t2.steam=`%s`.steam);";
+new String:g_sSqlRemoveDuplicateNameSQLite[] = "delete from `%s` where `%s`.id > (SELECT min(id) from `%s` as t2 WHERE t2.name=`%s`.name);";
+new String:g_sSqlRemoveDuplicateIpSQLite[] = "delete from `%s` where `%s`.id > (SELECT min(id) from `%s` as t2 WHERE t2.lastip=`%s`.lastip);";
+new String:g_sSqlRemoveDuplicateMySQL[] = "delete from `%s` USING `%s`, `%s` as vtable WHERE (`%s`.id>vtable.id) AND (`%s`.steam=vtable.steam);";
+new String:g_sSqlRemoveDuplicateNameMySQL[] = "delete from `%s` USING `%s`, `%s` as vtable WHERE (`%s`.id>vtable.id) AND (`%s`.name=vtable.name);";
+new String:g_sSqlRemoveDuplicateIpMySQL[] = "delete from `%s` USING `%s`, `%s` as vtable WHERE (`%s`.id>vtable.id) AND (`%s`.ip=vtable.ip);";
 new String:g_sWeaponsNamesGame[28][] = {"knife","glock","usp","p228","deagle","elite","fiveseven","m3","xm1014","mac10","tmp","mp5navy","ump45","p90","galil","ak47","sg550","famas","m4a1","aug","scout","sg552","awp","g3sg1","m249","hegrenade","flashbang","smokegrenade"};
 new String:g_sWeaponsNamesFull[28][] = {"Knife"," 9x19 mm Sidearm (Glock)","KM .45 Tactical (USP)","228 Compact","Knighthawk .50C (Desert Eagle)",".40 Dual Elites","ES Five-Seven","Leone 12 Gauge Super","Leone YG1265 Auto Shotgun","Ingram MAC-10","Schmidt Machine Pistol (TMP)","KM Submachine Gun (MP5)","KM UMP45","ES C90 (P90)","IDF Defender","CV-47 (AK-47)","Kreig 550 Commando (SG550)","Clarion 5.56","Maverick M4A1 Carbine (Colt)","Bullpup (AUG)","Schmidt Scout","Kreig 552","Magnum Sniper Rifle (AWP)","D3/AU-1 (G3)","M249","HE Grenade","Flashbang","Smoke Grenade"};
 new Handle:g_cvarEnabled;
@@ -434,15 +437,30 @@ public OnConfigsExecuted(){
 public Action:CMD_Duplicate(client,args){
 	new String:sQuery[400];
 	
-	if(g_RankBy == 0)
-		Format(sQuery,sizeof(sQuery),g_sSqlRemoveDuplicate,g_sSQLTable,g_sSQLTable,g_sSQLTable,g_sSQLTable);
-		
-	else if(g_RankBy == 1)
-		Format(sQuery,sizeof(sQuery),g_sSqlRemoveDuplicateName,g_sSQLTable,g_sSQLTable,g_sSQLTable,g_sSQLTable);
+	if(g_bMysql){
 	
-	else if(g_RankBy == 2)
-		Format(sQuery,sizeof(sQuery),g_sSqlRemoveDuplicateIp,g_sSQLTable,g_sSQLTable,g_sSQLTable,g_sSQLTable);
+		if(g_RankBy == 0)
+			Format(sQuery,sizeof(sQuery),g_sSqlRemoveDuplicateMySQL,g_sSQLTable,g_sSQLTable,g_sSQLTable,g_sSQLTable);
+			
+		else if(g_RankBy == 1)
+			Format(sQuery,sizeof(sQuery),g_sSqlRemoveDuplicateNameMySQL,g_sSQLTable,g_sSQLTable,g_sSQLTable,g_sSQLTable);
 		
+		else if(g_RankBy == 2)
+			Format(sQuery,sizeof(sQuery),g_sSqlRemoveDuplicateIpMySQL,g_sSQLTable,g_sSQLTable,g_sSQLTable,g_sSQLTable);
+	
+	} else {
+	
+		if(g_RankBy == 0)
+			Format(sQuery,sizeof(sQuery),g_sSqlRemoveDuplicateSQLite,g_sSQLTable,g_sSQLTable,g_sSQLTable,g_sSQLTable);
+			
+		else if(g_RankBy == 1)
+			Format(sQuery,sizeof(sQuery),g_sSqlRemoveDuplicateNameSQLite,g_sSQLTable,g_sSQLTable,g_sSQLTable,g_sSQLTable);
+		
+		else if(g_RankBy == 2)
+			Format(sQuery,sizeof(sQuery),g_sSqlRemoveDuplicateIpSQLite,g_sSQLTable,g_sSQLTable,g_sSQLTable,g_sSQLTable);
+			
+	}
+	
 	SQL_TQuery(g_hStatsDb,SQL_DuplicateCallback,sQuery,client);
 	
 	return Plugin_Handled;
