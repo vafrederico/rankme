@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.7.6"
+#define PLUGIN_VERSION "2.7.7"
 #include <sourcemod> 
 #include <adminmenu>
 #include <colors>
@@ -440,13 +440,13 @@ public Action:CMD_Duplicate(client,args){
 	if(g_bMysql){
 	
 		if(g_RankBy == 0)
-			Format(sQuery,sizeof(sQuery),g_sSqlRemoveDuplicateMySQL,g_sSQLTable,g_sSQLTable,g_sSQLTable,g_sSQLTable);
+			Format(sQuery,sizeof(sQuery),g_sSqlRemoveDuplicateMySQL,g_sSQLTable,g_sSQLTable,g_sSQLTable,g_sSQLTable,g_sSQLTable);
 			
 		else if(g_RankBy == 1)
-			Format(sQuery,sizeof(sQuery),g_sSqlRemoveDuplicateNameMySQL,g_sSQLTable,g_sSQLTable,g_sSQLTable,g_sSQLTable);
+			Format(sQuery,sizeof(sQuery),g_sSqlRemoveDuplicateNameMySQL,g_sSQLTable,g_sSQLTable,g_sSQLTable,g_sSQLTable,g_sSQLTable);
 		
 		else if(g_RankBy == 2)
-			Format(sQuery,sizeof(sQuery),g_sSqlRemoveDuplicateIpMySQL,g_sSQLTable,g_sSQLTable,g_sSQLTable,g_sSQLTable);
+			Format(sQuery,sizeof(sQuery),g_sSqlRemoveDuplicateIpMySQL,g_sSQLTable,g_sSQLTable,g_sSQLTable,g_sSQLTable,g_sSQLTable);
 	
 	} else {
 	

@@ -374,3 +374,6 @@
 = V.2.7.6 (02/02/12):
 	 => Fix:
 		   = Fixed remove duplicate queries not working on MySQL. (thanks krispx)
+= V.2.7.7 (02/03/12):
+	 => Fix:
+		   = Fixed misformatted queries in MySQL. (thanks krispx)
