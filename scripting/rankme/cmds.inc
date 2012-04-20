@@ -1057,9 +1057,11 @@ public SQL_RankCallback(Handle:owner, Handle:hndl, const String:error[], any:cli
 			
 			kdr = SQL_FetchFloat(hndl,5)/deaths;
 			if(g_bShowRankAll){
-				CPrintToChatAll("%s %t",MSG,"IsRankedAt", g_aClientName[client],i,g_TotalPlayers,g_aStats[client][SCORE],g_aStats[client][KILLS],g_aStats[client][DEATHS],kdr);
+				for(new j = 0; j <= MaxClients;j++)
+					if(IsClientInGame(j))
+						CPrintToChatEx(j,"%s %t",MSG,"IsRankedAt", g_aClientName[client],i,g_TotalPlayers,g_aStats[client][SCORE],g_aStats[client][KILLS],g_aStats[client][DEATHS],kdr);
 			} else {
-				CPrintToChat(client,"%s %t",MSG,"IsRankedAt", g_aClientName[client],i,g_TotalPlayers,g_aStats[client][SCORE],g_aStats[client][KILLS],g_aStats[client][DEATHS],kdr);
+				CPrintToChatEx(client,client,"%s %t",MSG,"IsRankedAt", g_aClientName[client],i,g_TotalPlayers,g_aStats[client][SCORE],g_aStats[client][KILLS],g_aStats[client][DEATHS],kdr);
 			}
 			break;
 		}

@@ -1,5 +1,15 @@
 ﻿"Phrases"
 {
+	"BombPickup"
+	{
+		"#format"	"{1:s},{2:d},{3:d}"
+		"en"		"{lightgreen}{1}{default} ({2}) got {3} point(s) for Picking up the Bomb."
+	}
+	"BombDropped"
+	{
+		"#format"	"{1:s},{2:d},{3:d}"
+		"en"		"{lightgreen}{1}{default} ({2}) lost {3} point(s) for Dropping the Bomb."
+	}
 	"MVP"
 	{
 		"#format"	"{1:s},{2:d},{3:d}"

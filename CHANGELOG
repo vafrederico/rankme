@@ -381,5 +381,12 @@
 	 => Fix:
 		   = Updated PL translation. (thanks sajmon83)
 		   = Updated FR translation. (thanks MarechalSummers)
-		   = Updated RU translation. (thanks Lord Canistra)
-		 
+		   = Updated RU translation. (thanks Lord Canistra) 
+= V.2.7.9 (04/20/12):
+	 => Features:
+		   = Added support for {teamcolor} tag. (thanks relicek)
+		   = Added cvar for changing the default message start ([RankMe]).
+		   = Added giving points for picking up the bomb and losing for dropping it. (thanks relicek)
+		   (As new translations were added, a map change is required, and because o the new cvar, delete the rankme.cfg)
+	 => Fix:
+		   = Updated KO translation. (thanks Blowst)

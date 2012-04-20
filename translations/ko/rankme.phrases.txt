@@ -1,5 +1,17 @@
 ﻿"Phrases"
 {
+	"BombPickup"
+	{
+		"ko"		"{lightgreen}{1}{default} ({2})님이 C4를 주워 {3}점을 얻었습니다."
+	}
+	"BombDropped"
+	{
+		"ko"		"{lightgreen}{1}{default} ({2})님이 C4를 버려 {3}점을 잃었습니다."
+	}
+	"MVP"
+	{
+		"ko"		"{lightgreen}{1}{default} ({2})님이 이번 라운드의 MVP로 {3}점을 얻었습니다."
+	}
 	"Kills"
 	{
 		"ko"		"죽인 수"

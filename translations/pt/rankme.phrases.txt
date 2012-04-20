@@ -1,5 +1,13 @@
 ﻿"Phrases"
 {
+	"BombPickup"
+	{
+		"pt"		"{lightgreen}{1}{default} ({2}) ganhou {3} ponto(s) por Pegar a Bomba."
+	}
+	"BombDropped"
+	{
+		"pt"		"{lightgreen}{1}{default} ({2}) perdeu {3} ponto(s) for Perder a Bomba."
+	}
 	"MVP"
 	{
 		"pt"		"{lightgreen}{1}{default} ({2}) ganhou {3} pontos(s) por ser o Jogador de Maior Valor (MVP)."
