@@ -1,5 +1,15 @@
-"Phrases"
+﻿"Phrases"
 {
+	"BombPickup"
+	{
+
+		"pl"		"{lightgreen}{1}{default} ({2}) uzyskał {3} punkt(y/ów) za podniesienie bomby."
+	}
+	"BombDropped"
+	{
+
+		"pl"		"{lightgreen}{1}{default} ({2}) utracił {3} punkt(y/ów) za upuszczenie bomby."
+	}
 	"MVP"
 	{
 

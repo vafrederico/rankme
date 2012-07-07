@@ -394,3 +394,7 @@
 	 => Fix:
 		   = Fixed using client 0. (thanks relicek and krispx)
 		   = Removed support for tag {teamcolor} as if you enable it, you lose the {lightgreen} tag. (thanks relicek and krispx)
+= V.2.8.1 (07/07/12):
+	 => Fix:
+		   = Fixed not using CPrintToChat on Not Ranked message. (thanks relicek)
+		   = Update PL translation. (thanks sajmon83)

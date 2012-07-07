@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.8.0"
+#define PLUGIN_VERSION "2.8.1"
 #include <sourcemod> 
 #include <adminmenu>
 #include <colors>

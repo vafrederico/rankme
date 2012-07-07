@@ -1006,7 +1006,7 @@ public Action:CMD_Rank(client,args){
 		return Plugin_Handled;
 	//LogToFile("rankme.debug.log","\"sm_rank\" command called by client %d.",client);
 	if(g_aStats[client][KILLS] < g_MinimalKills){
-		PrintToChat(client,"%s %t",MSG,"NotRanked",g_aStats[client][KILLS],g_MinimalKills);
+		CPrintToChat(client,"%s %t",MSG,"NotRanked",g_aStats[client][KILLS],g_MinimalKills);
 		return Plugin_Handled;
 	}
 	new String:query[500];
