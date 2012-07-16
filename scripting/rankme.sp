@@ -884,6 +884,28 @@ public Action:OnSayText(client, const String:command[], argc)
 			ShowTopHS(client, StringToInt(cpMessage[7]));
 		}
 	}
+	else if (StrContains(sWords[0], "topkills", false) == 0)
+	{
+		if (strcmp(cpMessage, "topkills") == 0)
+		{
+			ShowTopKills(client, 0);
+		}
+		else
+		{
+			ShowTopKills(client, StringToInt(cpMessage[7]));
+		}
+	}
+	else if (StrContains(sWords[0], "topdeaths", false) == 0)
+	{
+		if (strcmp(cpMessage, "topdeaths") == 0)
+		{
+			ShowTopDeaths(client, 0);
+		}
+		else
+		{
+			ShowTopDeaths(client, StringToInt(cpMessage[7]));
+		}
+	}
 	else if (StrContains(sWords[0], "topacc", false) == 0)
 	{
 		if (strcmp(cpMessage, "topacc") == 0)
