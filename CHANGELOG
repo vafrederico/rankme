@@ -398,3 +398,10 @@
 	 => Fix:
 		   = Fixed not using CPrintToChat on Not Ranked message. (thanks relicek)
 		   = Update PL translation. (thanks sajmon83)
+= V.2.8.2 (07/15/12):
+	 => Fix:
+		   = Added check for invalid client at BombDropped event. (thanks beatfried)
+		   = Added resetmyrank text to translation. Now enabled Color Tags on them. (thanks phillip.)
+	 => Features:
+		   = Added topkills and topdeaths. (thanks daroach and natino)
+		   = Added ResetMyRank and Deaths translations. (As new translations were added, a map change is required)

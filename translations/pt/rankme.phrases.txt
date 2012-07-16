@@ -1,5 +1,13 @@
 ﻿"Phrases"
 {
+	"Deaths"
+	{
+		"pt"		"Mortes"
+	}
+	"ResetMyRank"
+	{
+		"pt"		"{default}Seu rank foi resetado"
+	}
 	"BombPickup"
 	{
 		"pt"		"{lightgreen}{1}{default} ({2}) ganhou {3} ponto(s) por Pegar a Bomba."

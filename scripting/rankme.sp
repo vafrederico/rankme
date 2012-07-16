@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.8.1"
+#define PLUGIN_VERSION "2.8.2"
 #include <sourcemod> 
 #include <adminmenu>
 #include <colors>
@@ -308,6 +308,8 @@ public OnPluginStart(){
 	RegConsoleCmd("sm_topacc",CMD_TopAcc, "RankMe: Shows the TOP ordered by accuracy");
 	RegConsoleCmd("sm_tophs",CMD_TopHS, "RankMe: Shows the TOP ordered by HeadShots");
 	RegConsoleCmd("sm_toptime",CMD_TopTime, "RankMe: Shows the TOP ordered by Connected Time");
+	RegConsoleCmd("sm_topkills",CMD_TopKills, "RankMe: Shows the TOP ordered by kills");
+	RegConsoleCmd("sm_topdeaths",CMD_TopDeaths, "RankMe: Shows the TOP ordered by deaths");
 	RegConsoleCmd("sm_hitboxme",CMD_HitBox,"RankMe: Shows the HitBox stats");
 	RegConsoleCmd("sm_weaponme",CMD_WeaponMe,"RankMe: Shows the kills with each weapon");
 	RegConsoleCmd("sm_resetmyrank",CMD_ResetOwnRank, "RankMe: Resets your own rank");
@@ -1332,7 +1334,7 @@ public Action:Event_BombDropped( Handle:event, const String:name[], bool:dontBro
 	
 	if(!g_bChatChange)
 		return;
-	if(g_PointsBombDropped > 0)
+	if(g_PointsBombDropped > 0 && client == 0)
 		CPrintToChat(client,"%s %t",MSG,"BombDropped",g_aClientName[client],g_aStats[client][SCORE],g_PointsBombDropped);
 
 }

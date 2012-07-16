@@ -1,5 +1,12 @@
 ﻿"Phrases"
-{
+{	
+	"Deaths"
+	{
+		"en"		"Deaths"
+	}
+	"ResetMyRank"{
+		"en"		"{default}Your rank has been reseted"
+	}
 	"BombPickup"
 	{
 		"#format"	"{1:s},{2:d},{3:d}"
