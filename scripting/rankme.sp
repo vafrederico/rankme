@@ -1,5 +1,5 @@
 #pragma semicolon  1
-#define PLUGIN_VERSION "2.8.2"
+#define PLUGIN_VERSION "2.8.3"
 #include <sourcemod> 
 #include <adminmenu>
 #include <colors>
@@ -1971,7 +1971,7 @@ stock MakeSelectQuery(String:sQuery[],strsize){
 	Format(sQuery,strsize,"SELECT * FROM `%s` WHERE kills >= '%d'",g_sSQLTable, g_MinimalKills);
 		
 	// Append check for bots
-	if(g_bRankBots && g_bShowBotsOnRank)
+	if(!g_bShowBotsOnRank)
 		Format(sQuery,strsize,"%s AND steam <> 'BOT'",sQuery);
 	
 	// Append check for inactivity

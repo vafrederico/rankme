@@ -405,3 +405,7 @@
 	 => Features:
 		   = Added topkills and topdeaths. (thanks daroach and natino)
 		   = Added ResetMyRank and Deaths translations. (As new translations were added, a map change is required)
+= V.2.8.3 (07/19/12):
+	 => Fix:
+		   = Fixed Bots not showing on rank when rankme_show_bots_on_rank was set to 1. (thanks natino)
+		   = Updated FR translation. (thanks timort)

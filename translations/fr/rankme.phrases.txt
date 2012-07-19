@@ -1,5 +1,50 @@
-"Phrases"
+﻿"Phrases"
 {
+	"Deaths"
+	{
+		"fr"		"Morts"
+	}
+	"ResetMyRank"{
+
+    	"fr"		"{default}Ton rank a été réinitialisé"
+	}
+	"BombPickup"
+	{
+
+		"fr"		"{lightgreen}{1}{default} ({2}) a reçu {3} point(s) pour avoir pris la bombe."
+	}
+	"BombDropped"
+	{
+
+		"fr"		"{lightgreen}{1}{default} ({2}) a perdu {3} point(s) pour avoir laché la bombe."
+	}
+	"MVP"
+	{
+	
+		"fr"		"{lightgreen}{1}{default} ({2}) a reçu {3} point(s) pour avoir été le joueur le plus utile."
+	}
+	"LostSuicide"
+	{
+
+		"fr"		"{lightgreen}{1}{default} ({2}) a perdu {3} point(s) lors en suicidant."
+	}
+	"LostTK"
+	{
+
+		"fr"		"{lightgreen}{1}{default} ({2}) perd {3} point(s) pour avoir tué un coéquipié {lightgreen}{4}"
+	}
+	"VIPStats"
+	{
+		"fr"		"Statistiques VIP"
+	}
+	"VIPEscapes"
+	{
+		"fr"		"Evasions en tant que VIP"
+	}
+	"VIPsKilled"
+	{
+		"fr"		"VIPs tués"
+	}
 	"Kills"
 	{
 		"fr"		"tués"
